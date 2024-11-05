@@ -1,25 +1,17 @@
-import 'dotenv/config';
-import express from "express";
-import cors from "cors";
+import "dotenv/config";
+import fastify from "fastify";
+import cors from "@fastify/cors";
+import routes from "./routes.js";
 
-const app = express();
 
-const allowedOrigins = ['', ''];
+const app = fastify();
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-};
+app.register(cors, {
+  origin: "*",
+});
 
-app.use(express.json());
-app.use(cors(corsOptions));
-// app.use(router);
+app.register(routes);
 
-app.listen(process.env.PORT, () => {
+app.listen({ port: process.env.PORT }).then(() => {
   console.log(`Server is running on port ${process.env.PORT}`);
 });

@@ -71,7 +71,7 @@ const getUserById = async (id) => {
 
 const patchUser = async (id, name, phone, birthDate) => {
   console.log(id, name, phone, birthDate);
-  
+
   try {
     const user = await prisma.user.update({
       where: {
@@ -97,9 +97,24 @@ const patchUser = async (id, name, phone, birthDate) => {
   }
 };
 
+const deleteUser = async (id) => {
+  try {
+    const user = await prisma.user.delete({
+      where: {
+        id,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
 export default {
   register,
   getUserByEmail,
   getUserById,
   patchUser,
+  deleteUser,
 };

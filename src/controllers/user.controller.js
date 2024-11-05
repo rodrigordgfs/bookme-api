@@ -1,11 +1,11 @@
 import userService from "../services/user.service.js";
 import { StatusCodes } from "http-status-codes";
-import { registerSchema, loginSchema, patchSchema } from "./schemas/index.js";
+import { registerSchemaBody, loginSchemaBody, patchSchemaBody } from "../schemas/index.js";
 import { z } from "zod";
 
 const register = async (request, reply) => {
   try {
-    const body = registerSchema.parse(request.body);
+    const body = registerSchemaBody.parse(request.body);
 
     const user = await userService.register(
       body.name,
@@ -19,7 +19,7 @@ const register = async (request, reply) => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return reply.code(StatusCodes.BAD_REQUEST).send({
-        errors: error.errors.map((error) => {
+        error: error.errors.map((error) => {
           return {
             message: error.message,
             field: error.path[0],
@@ -42,7 +42,7 @@ const register = async (request, reply) => {
 
 const login = async (request, reply) => {
   try {
-    const body = loginSchema.parse(request.body);
+    const body = loginSchemaBody.parse(request.body);
 
     const user = await userService.login(body.email, body.password);
 
@@ -50,7 +50,7 @@ const login = async (request, reply) => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return reply.code(StatusCodes.BAD_REQUEST).send({
-        errors: error.errors.map((error) => {
+        error: error.errors.map((error) => {
           return {
             message: error.message,
             field: error.path[0],
@@ -94,7 +94,7 @@ const getUserById = async (request, reply) => {
 const patchUser = async (request, reply) => {
   try {
     const id = request.params.id;
-    const body = patchSchema.parse(request.body);
+    const body = patchSchemaBody.parse(request.body);
 
     const user = await userService.patchUser(
       id,
@@ -108,7 +108,7 @@ const patchUser = async (request, reply) => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return reply.code(StatusCodes.BAD_REQUEST).send({
-        errors: error.errors.map((error) => {
+        error: error.errors.map((error) => {
           return {
             message: error.message,
             field: error.path[0],
@@ -129,9 +129,30 @@ const patchUser = async (request, reply) => {
   }
 };
 
+const deleteUser = async (request, reply) => {
+  try {
+    const id = request.params.id;
+
+    await userService.deleteUser(id);
+
+    reply.code(StatusCodes.NO_CONTENT).send();
+  } catch (error) {
+    if (error.message === "User not found") {
+      return reply.code(StatusCodes.NOT_FOUND).send({
+        error: "Usuário não encontrado",
+      });
+    }
+
+    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
+      error: "Ocorreu um erro ao deletar o usuário",
+    });
+  }
+};
+
 export default {
   register,
   login,
   getUserById,
   patchUser,
+  deleteUser,
 };

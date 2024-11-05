@@ -68,9 +68,19 @@ const patchUser = async (id, name, email, phone, birthDate) => {
   return updatedUser;
 };
 
+const deleteUser = async (id) => {
+  const user = await userRepositorie.getUserById(id);
+  if (!user) {
+    throw new AppError("User not found", StatusCodes.NOT_FOUND);
+  }
+
+  await userRepositorie.deleteUser(id);
+};
+
 export default {
   register,
   login,
   getUserById,
   patchUser,
+  deleteUser,
 };

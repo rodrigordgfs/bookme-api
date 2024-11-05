@@ -8,12 +8,54 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  phone     String
-  birthDate DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String         @id @default(uuid())
+  name         String
+  email        String         @unique
+  password     String
+  phone        String
+  birthDate    DateTime
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  Professional Professional[]
+
+  @@map("users")
+}
+
+model Professional {
+  id                  String                @id @default(uuid())
+  userId              String                @unique
+  specialty           String
+  hiringDate          DateTime
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  user                User                  @relation(fields: [userId], references: [id])
+  ProfessionalService ProfessionalService[]
+
+  @@map("professionals")
+}
+
+model Service {
+  id                  String                @id @default(uuid())
+  name                String
+  description         String
+  price               Float
+  duration            Int
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  ProfessionalService ProfessionalService[]
+
+  @@map("services")
+}
+
+model ProfessionalService {
+  id             String       @id @default(uuid())
+  professionalId String
+  serviceId      String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  service        Service      @relation(fields: [serviceId], references: [id])
+
+  @@unique([professionalId, serviceId])
+  @@map("professional_services")
 }

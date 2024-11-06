@@ -233,6 +233,47 @@ const getProfessionalServiceByIdProfessional = async (id_professional) => {
   }
 };
 
+const getProfessionalServiceById = async (id_professional_service) => {
+  try {
+    const professionalService = await prisma.professionalService.findUnique({
+      where: {
+        id: id_professional_service,
+      },
+      select: {
+        id: true,
+        professional: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              },
+            },
+            specialty: true,
+            hiringDate: true,
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+          },
+        },
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return professionalService;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
 const postProfessionalService = async (id_professional, id_service) => {
   try {
     const professionalService = await prisma.professionalService.create({
@@ -304,6 +345,7 @@ export default {
   deleteProfessional,
   getProfessionalServiceByIdProfessionalIdService,
   getProfessionalServiceByIdProfessional,
+  getProfessionalServiceById,
   postProfessionalService,
   deleteProfessionalService,
 };

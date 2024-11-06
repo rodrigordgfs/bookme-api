@@ -16,7 +16,12 @@ import { deleteProfessionalServiceSchemaParams } from './deleteProfessionalServi
 import { postClientSchemaBody } from './postClientBody.schema.js'
 import { patchClientSchemaBody } from './patchClientBody.schema.js'
 import { getClientSchemaParams } from './getClientParams.schema.js'
-import { deleteClientSchemaParams } from './deleteClientSchemaParams.js'
+import { deleteClientSchemaParams } from './deleteClientSchemaParams.schema.js'
+import { postAppointmentSchemaBody } from './postAppointmentBody.schema.js'
+import { patchAppointmentSchemaBody } from './patchAppointmentBody.schema.js'
+import { patchAppointmentSchemaParams } from './patchAppointmentParams.schema.js'
+import { deleteAppointmentSchemaParams } from './deleteAppointmentParams.schema.js'
+import { getAppointmentSchemaParams } from './getAppointmentParams.schema.js'
 
 export {
   registerSchemaBody,
@@ -37,5 +42,10 @@ export {
   postClientSchemaBody,
   patchClientSchemaBody,
   getClientSchemaParams,
-  deleteClientSchemaParams
+  deleteClientSchemaParams,
+  postAppointmentSchemaBody,
+  patchAppointmentSchemaBody,
+  patchAppointmentSchemaParams,
+  deleteAppointmentSchemaParams,
+  getAppointmentSchemaParams
 };

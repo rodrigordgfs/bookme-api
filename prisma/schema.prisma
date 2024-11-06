@@ -47,27 +47,43 @@ model Service {
 }
 
 model ProfessionalService {
-  id             String       @id @default(uuid())
+  id             String        @id @default(uuid())
   professionalId String
   serviceId      String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  professional   Professional @relation(fields: [professionalId], references: [id])
-  service        Service      @relation(fields: [serviceId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  professional   Professional  @relation(fields: [professionalId], references: [id])
+  service        Service       @relation(fields: [serviceId], references: [id])
+  Appointment    Appointment[]
 
   @@unique([professionalId, serviceId])
   @@map("professional_services")
 }
 
 model Client {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  phone     String
-  birthDate DateTime
-  gender    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  id          String        @id @default(uuid())
+  userId      String        @unique
+  phone       String
+  birthDate   DateTime
+  gender      String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id])
+  Appointment Appointment[]
 
   @@map("clients")
+}
+
+model Appointment {
+  id                    String              @id @default(uuid())
+  clientId              String
+  professionalServiceId String
+  dateTime              DateTime
+  observation           String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  professionalService   ProfessionalService @relation(fields: [professionalServiceId], references: [id])
+  client                Client              @relation(fields: [clientId], references: [id])
+
+  @@map("appointments")
 }

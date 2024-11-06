@@ -13,6 +13,10 @@ import { deleteServiceSchemaParams } from "./deleteServiceParams.schema.js";
 import { postProfessionalServiceSchemaParams } from './postProfessionalServiceParams.schema.js'
 import { getProfessionalServiceSchemaParams } from './getProfessionalServiceParams.schema.js'
 import { deleteProfessionalServiceSchemaParams } from './deleteProfessionalServiceParams.schema.js'
+import { postClientSchemaBody } from './postClientBody.schema.js'
+import { patchClientSchemaBody } from './patchClientBody.schema.js'
+import { getClientSchemaParams } from './getClientParams.schema.js'
+import { deleteClientSchemaParams } from './deleteClientSchemaParams.js'
 
 export {
   registerSchemaBody,
@@ -29,5 +33,9 @@ export {
   patchServiceSchemaParams,
   postProfessionalServiceSchemaParams,
   getProfessionalServiceSchemaParams,
-  deleteProfessionalServiceSchemaParams
+  deleteProfessionalServiceSchemaParams,
+  postClientSchemaBody,
+  patchClientSchemaBody,
+  getClientSchemaParams,
+  deleteClientSchemaParams
 };

@@ -1,21 +1,17 @@
 import { prisma } from "../libs/prisma.js";
 
-const register = async (name, email, password, phone, birthDate) => {
+const register = async (name, email, password) => {
   try {
     const user = await prisma.user.create({
       data: {
         name,
         email,
-        password,
-        phone,
-        birthDate,
+        password
       },
       select: {
         id: true,
         name: true,
         email: true,
-        phone: true,
-        birthDate: true,
       },
     });
     return user;
@@ -35,8 +31,6 @@ const getUserByEmail = async (email) => {
         id: true,
         name: true,
         email: true,
-        phone: true,
-        birthDate: true,
         password: true,
       },
     });
@@ -57,8 +51,6 @@ const getUserById = async (id) => {
         id: true,
         name: true,
         email: true,
-        phone: true,
-        birthDate: true,
         password: true,
       },
     });
@@ -69,25 +61,19 @@ const getUserById = async (id) => {
   }
 };
 
-const patchUser = async (id, name, phone, birthDate) => {
-  console.log(id, name, phone, birthDate);
-
+const patchUser = async (id, name) => {
   try {
     const user = await prisma.user.update({
       where: {
         id,
       },
       data: {
-        name,
-        phone,
-        birthDate,
+        name
       },
       select: {
         id: true,
         name: true,
-        email: true,
-        phone: true,
-        birthDate: true,
+        email: true
       },
     });
     return user;

@@ -16,7 +16,9 @@ const postProfessional = async (user_id, specialty, hiringDate) => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            phone: true,
+            birthDate: true,
           },
         },
         specialty: true,
@@ -44,7 +46,9 @@ const getProfessionalById = async (id) => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            phone: true,
+            birthDate: true,
           },
         },
         specialty: true,
@@ -69,7 +73,9 @@ const getProfessionals = async () => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            phone: true,
+            birthDate: true,
           },
         },
         specialty: true,
@@ -97,7 +103,9 @@ const getProfessionalByUserId = async (id) => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            phone: true,
+            birthDate: true,
           },
         },
         specialty: true,
@@ -129,7 +137,9 @@ const patchProfessional = async (id, specialty, hiringDate) => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            phone: true,
+            birthDate: true,
           },
         },
         specialty: true,
@@ -180,7 +190,9 @@ const getProfessionalServiceByIdProfessionalIdService = async (
               select: {
                 id: true,
                 name: true,
-                email: true
+                email: true,
+                phone: true,
+                birthDate: true,
               },
             },
             specialty: true,
@@ -252,7 +264,9 @@ const postProfessionalService = async (id_professional, id_service) => {
               select: {
                 id: true,
                 name: true,
-                email: true
+                email: true,
+                phone: true,
+                birthDate: true,
               },
             },
             specialty: true,

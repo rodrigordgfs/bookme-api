@@ -10,9 +10,7 @@ const register = async (request, reply) => {
     const user = await userService.register(
       body.name,
       body.email,
-      body.password,
-      body.phone,
-      body.birthDate
+      body.password
     );
 
     reply.code(StatusCodes.CREATED).send(user);
@@ -99,9 +97,7 @@ const patchUser = async (request, reply) => {
     const user = await userService.patchUser(
       id,
       body.name,
-      body.email,
-      body.phone,
-      body.birthDate
+      body.email
     );
 
     reply.send(user);

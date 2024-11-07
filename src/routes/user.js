@@ -9,6 +9,11 @@ const userRoutes = async (fastify) => {
     { preHandler: authMiddleware.validateToken },
     userController.getUserById
   );
+  fastify.get(
+    "/users",
+    { preHandler: authMiddleware.validateToken },
+    userController.getUsers
+  );
   fastify.patch(
     "/users/:id",
     { preHandler: authMiddleware.validateToken },

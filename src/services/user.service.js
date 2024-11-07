@@ -48,6 +48,11 @@ const getUserById = async (id) => {
   return user;
 };
 
+const getUsers = async () => {
+  const users = await userRepositorie.getUsers();
+  return users;
+};
+
 const patchUser = async (id, name) => {
   const user = await userRepositorie.getUserById(id);
   if (!user) {
@@ -76,4 +81,5 @@ export default {
   getUserById,
   patchUser,
   deleteUser,
+  getUsers,
 };

@@ -41,6 +41,22 @@ const getUserByEmail = async (email) => {
   }
 };
 
+const getUsers = async () => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+    return users;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
 const getUserById = async (id) => {
   try {
     const user = await prisma.user.findUnique({
@@ -103,4 +119,5 @@ export default {
   getUserById,
   patchUser,
   deleteUser,
+  getUsers,
 };

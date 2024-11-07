@@ -89,6 +89,18 @@ const getUserById = async (request, reply) => {
   }
 };
 
+const getUsers = async (request, reply) => {
+  try {
+    const users = await userService.getUsers();
+
+    reply.send(users);
+  } catch (error) {
+    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
+      error: "Ocorreu um erro ao buscar os usuários",
+    });
+  }
+}
+
 const patchUser = async (request, reply) => {
   try {
     const id = request.params.id;
@@ -151,4 +163,5 @@ export default {
   getUserById,
   patchUser,
   deleteUser,
+  getUsers
 };

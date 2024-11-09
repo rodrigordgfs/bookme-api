@@ -7,13 +7,11 @@ import {
   getClientSchemaParams,
   deleteClientSchemaParams,
 } from "../schemas/index.js";
-import { z } from "zod";
 
 const postClient = async (request, reply) => {
   try {
-    const { id_user, phone, birthDate, gender } = postClientSchemaBody.parse(
-      request.body
-    );
+    const { id_user, phone, birthDate, gender, photo } =
+      postClientSchemaBody.parse(request.body);
 
     await userService.getUserById(id_user);
 
@@ -21,7 +19,8 @@ const postClient = async (request, reply) => {
       id_user,
       phone,
       birthDate,
-      gender
+      gender,
+      photo
     );
 
     reply.status(StatusCodes.CREATED).send(client);
@@ -57,7 +56,7 @@ const postClient = async (request, reply) => {
 const patchClient = async (request, reply) => {
   try {
     const { id } = getClientSchemaParams.parse(request.params);
-    const { phone, birthDate, gender } = patchClientSchemaBody.parse(
+    const { phone, birthDate, gender, photo } = patchClientSchemaBody.parse(
       request.body
     );
 
@@ -69,7 +68,8 @@ const patchClient = async (request, reply) => {
       id,
       phone,
       birthDateISO,
-      gender
+      gender,
+      photo
     );
 
     reply.send(client).status(StatusCodes.OK);

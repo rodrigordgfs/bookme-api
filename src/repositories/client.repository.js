@@ -1,4 +1,5 @@
 import { prisma } from "../libs/prisma.js";
+import { supabase } from "../libs/supabase.js";
 
 const postClient = async (id_user, phone, birthDate, gender) => {
   try {
@@ -23,6 +24,7 @@ const postClient = async (id_user, phone, birthDate, gender) => {
         phone: true,
         birthDate: true,
         gender: true,
+        photoUrl: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -34,16 +36,17 @@ const postClient = async (id_user, phone, birthDate, gender) => {
   }
 };
 
-const patchClient = async (id, phone, birthDate, gender) => {
+const patchClient = async (id, phone, birthDate, gender, photoUrl) => {
   try {
     const client = await prisma.client.update({
       where: {
-        id
+        id,
       },
       data: {
         phone,
         birthDate,
         gender,
+        photoUrl
       },
       select: {
         id: true,
@@ -57,6 +60,7 @@ const patchClient = async (id, phone, birthDate, gender) => {
         phone: true,
         birthDate: true,
         gender: true,
+        photoUrl: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -83,6 +87,7 @@ const getClients = async () => {
         phone: true,
         birthDate: true,
         gender: true,
+        photoUrl: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -112,6 +117,7 @@ const getClientById = async (id) => {
         phone: true,
         birthDate: true,
         gender: true,
+        photoUrl: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -129,8 +135,24 @@ const getClientByUserId = async (id_user) => {
       where: {
         user: {
           id: id_user,
-        }
-      }
+        },
+      },
+      select: {
+        id: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        phone: true,
+        birthDate: true,
+        gender: true,
+        photoUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
     return client;
   } catch (error) {
@@ -152,6 +174,76 @@ const deleteClient = async (id) => {
   }
 };
 
+const uploadClientImage = async (id_client, photoBase64) => {
+  try {
+    // Extrair a extensão da imagem
+    const match = photoBase64.match(/^data:image\/(\w+);base64,/);
+    const extension = match ? match[1] : "jpeg"; // Se não encontrar, assume 'jpeg'
+
+    const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+
+    const fileName = `client/${id_client}.${extension}`;
+
+    // Verificar se a imagem já existe
+    const { data: existingFile, error: getError } = await supabase.storage
+      .from("clients")
+      .list("client", { search: `${id_client}.${extension}` });
+
+    if (getError) {
+      console.error("Erro ao buscar arquivo existente:", getError);
+      throw getError;
+    }
+
+    // Se o arquivo existir, excluí-lo
+    if (existingFile && existingFile.length > 0) {
+      const { error: deleteError } = await supabase.storage
+        .from("clients")
+        .remove([fileName]);
+
+      if (deleteError) {
+        console.error("Erro ao excluir arquivo existente:", deleteError);
+        throw deleteError;
+      }
+    }
+
+    // Fazer o upload da nova imagem
+    const { data, error } = await supabase.storage
+      .from("clients")
+      .upload(fileName, buffer, {
+        contentType: `image/${extension}`,
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (error) {
+      console.error("Erro ao fazer upload da imagem:", error);
+      throw error;
+    }
+
+    // Obter URL pública da imagem
+    const newPhoto = supabase.storage
+      .from("clients")
+      .getPublicUrl(fileName);
+
+    // Atualizar a URL da imagem no banco de dados
+    await prisma.client.update({
+      where: {
+        id: id_client,
+      },
+      data: {
+        photoUrl: newPhoto.data['publicUrl'],
+      },
+    });
+    console.log("URL da imagem:", newPhoto.data['publicUrl']);
+    
+    return newPhoto.data['publicUrl'];
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
 export default {
   postClient,
   patchClient,
@@ -159,4 +251,5 @@ export default {
   getClientById,
   deleteClient,
   getClientByUserId,
+  uploadClientImage,
 };

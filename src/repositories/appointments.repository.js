@@ -44,6 +44,7 @@ const postAppointment = async (
             professional: {
               select: {
                 id: true,
+                specialty: true,
                 user: {
                   select: {
                     id: true,
@@ -117,6 +118,7 @@ const patchAppointment = async (
             professional: {
               select: {
                 id: true,
+                specialty: true,
                 user: {
                   select: {
                     id: true,
@@ -150,8 +152,16 @@ const patchAppointment = async (
   }
 };
 
-const getAppointments = async () => {
+const getAppointments = async (start_date, end_date) => {
   try {
+    const where = {};
+    if (start_date) {
+      where.dateTime = { ...where.dateTime, gte: new Date(start_date) };
+    }
+    if (end_date) {
+      where.dateTime = { ...where.dateTime, lte: new Date(end_date) };
+    }
+
     const appointments = await prisma.appointment.findMany({
       select: {
         id: true,
@@ -173,6 +183,7 @@ const getAppointments = async () => {
             professional: {
               select: {
                 id: true,
+                specialty: true,
                 user: {
                   select: {
                     id: true,
@@ -198,13 +209,16 @@ const getAppointments = async () => {
         createdAt: true,
         updatedAt: true,
       },
+      where: Object.keys(where).length > 0 ? where : undefined,
     });
+
     return appointments;
   } catch (error) {
     console.log(error);
     throw error;
   }
 };
+
 
 const getAppointmentById = async (id) => {
   try {
@@ -232,6 +246,7 @@ const getAppointmentById = async (id) => {
             professional: {
               select: {
                 id: true,
+                specialty: true,
                 user: {
                   select: {
                     id: true,

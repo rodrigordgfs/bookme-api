@@ -9,6 +9,9 @@ const postClientSchemaBody = z.object({
     gender: z.string().refine(g => g === "M" || g === "F" || g === "O", {
         message: "Gênero inválido",
     }),
+    photo: z.string()
+        .regex(/^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/, "Formato de imagem inválido")
+        .optional()
 });
 
 export { postClientSchemaBody };

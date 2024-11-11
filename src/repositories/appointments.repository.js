@@ -155,7 +155,7 @@ const patchAppointment = async (
   }
 };
 
-const getAppointments = async (start_date, end_date) => {
+const getAppointments = async (start_date, end_date, status) => {
   try {
     const where = {};
     if (start_date) {
@@ -163,6 +163,9 @@ const getAppointments = async (start_date, end_date) => {
     }
     if (end_date) {
       where.dateTime = { ...where.dateTime, lte: new Date(end_date) };
+    }
+    if (status) {
+      where.status = status;
     }
 
     const appointments = await prisma.appointment.findMany({

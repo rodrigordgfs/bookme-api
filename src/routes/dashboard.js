@@ -27,6 +27,11 @@ const dashboardRoutes = async (fastify) => {
     { preHandler: authMiddleware.validateToken },
     dashboardController.getDashboardServicesInterval
   );
+  fastify.get(
+    "/dashboard/appointments-canceled",
+    { preHandler: authMiddleware.validateToken },
+    dashboardController.getDashboardAppointmentsCanceled
+  );
 };
 
 export default dashboardRoutes;

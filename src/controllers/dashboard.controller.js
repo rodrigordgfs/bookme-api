@@ -81,10 +81,24 @@ const getDashboardServicesInterval = async (request, reply) => {
   }
 }
 
+const getDashboardAppointmentsCanceled = async (request, reply) => {
+  try {
+    const appointments = await dashboardService.getAppointmentsCanceled();
+
+    reply.send(appointments).status(StatusCodes.OK);
+  } catch (error) {
+    console.log(error);
+    reply.code(500).send({
+      error: "Ocorreu um erro ao buscar os agendamentos",
+    });
+  }
+}
+
 export default {
   getDashboardTotalMonth,
   getDashboardAppointmentsMonth,
   getDashboardAppointmentsDay,
   getDashboardAppointmentsInterval,
-  getDashboardServicesInterval
+  getDashboardServicesInterval,
+  getDashboardAppointmentsCanceled
 };

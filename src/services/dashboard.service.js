@@ -183,68 +183,45 @@ const getServicesInterval = async (start_date, end_date) => {
   return services;
 };
 
-// const getDashboard = async (start_date, end_date) => {
-//   const startDateMonth = startOfMonth(new Date());
-//   const endDateMonth = endOfMonth(new Date());
+const getAppointmentsCanceled = async () => {
+  const startOfCurrentMonth = startOfMonth(new Date());
+  const endOfCurrentMonth = endOfMonth(new Date());
 
-//   const startDateISO = new Date(start_date);
-//   const endDateISO = new Date(end_date);
+  const startOfLastMonth = startOfMonth(subMonths(new Date(), 1));
+  const endOfLastMonth = endOfMonth(subMonths(new Date(), 1));
 
-//   const appointmentsMonth = await appointmentRepositorie.getAppointments(
-//     startDateMonth,
-//     endDateMonth
-//   );
+  const appointmentsCurrentMonth = await appointmentRepositorie.getAppointments(
+    startOfCurrentMonth,
+    endOfCurrentMonth,
+    "canceled"
+  );
 
-//   const totalReceptMonth = appointmentsMonth.reduce((total, appointment) => {
-//     return total + (appointment.professionalService.service.price || 0);
-//   }, 0);
+  const appointmentsLastMonth = await appointmentRepositorie.getAppointments(
+    startOfLastMonth,
+    endOfLastMonth,
+    "canceled"
+  );
 
-//   const totalAppointmentsMonth = appointmentsMonth.length;
+  const currentMonthAppointments = appointmentsCurrentMonth.length;
+  const lastMonthAppointments = appointmentsLastMonth.length;
 
-//   const appointmentsDay = await appointmentRepositorie.getAppointments(
-//     new Date(),
-//     new Date()
-//   );
+  const percentageChange = lastMonthAppointments
+    ? ((currentMonthAppointments - lastMonthAppointments) / lastMonthAppointments) * 100
+    : 0;
 
-//   const totalAppointmentsDay = appointmentsDay.length;
+  return {
+    appointments: currentMonthAppointments,
+    lastMonthAppointments,
+    percentageChange: parseFloat(percentageChange.toFixed(2)),
+  };
+};
 
-//   const cancels = 0;
-
-//   const appointmentsInterval = await appointmentRepositorie.getAppointments(
-//     startDateISO,
-//     endDateISO
-//   );
-
-//   const appointmentsByMonth = groupAppointmentsByMonth(appointmentsInterval);
-
-//   const services = {}
-
-//   appointmentsInterval.forEach(appointment => {
-//     const serviceName = appointment.professionalService.service.name;
-//     if (serviceName) {
-//       if (!services[serviceName]) {
-//         services[serviceName] = 0;
-//       }
-//       services[serviceName] += 1;
-//     }
-//   });
-
-//   console.log("appointmentsByMonth", appointmentsByMonth);
-
-//   return {
-//     totalReceptMonth,
-//     totalAppointmentsMonth,
-//     totalAppointmentsDay,
-//     cancels,
-//     appointmentsByMonth,
-//     services,
-//   };
-// };
 
 export default {
   getTotalMonth,
   getAppointmentsMonth,
   getAppointmentsDay,
   getAppointmentsInterval,
-  getServicesInterval
+  getServicesInterval,
+  getAppointmentsCanceled,
 };

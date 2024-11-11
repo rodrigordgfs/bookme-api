@@ -39,6 +39,7 @@ const patchAppointment = async (
   id,
   professionalServiceId,
   dateTime,
+  status,
   observation
 ) => {
   const appointmentExists = await appointmentRepositorie.getAppointmentById(id);
@@ -59,7 +60,8 @@ const patchAppointment = async (
     id,
     professionalServiceId,
     dateTimeISO,
-    observation
+    observation,
+    status
   );
 
   return appointment;

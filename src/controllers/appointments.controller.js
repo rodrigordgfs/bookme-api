@@ -45,7 +45,7 @@ const patchAppointment = async (request, reply) => {
     const { id_appointment } = patchAppointmentSchemaParams.parse(
       request.params
     );
-    const { professionalServiceId, dateTime, observation } =
+    const { professionalServiceId, dateTime, observation, status } =
       patchAppointmentSchemaBody.parse(request.body);
 
     const appointment = await appointmentsService.patchAppointment(

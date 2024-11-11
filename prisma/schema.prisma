@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum StatusAppointment {
+  pending
+  confirmed
+  completed
+  canceled
+}
+
 model User {
   id           String         @id @default(uuid())
   name         String
@@ -82,6 +89,7 @@ model Appointment {
   professionalServiceId String
   dateTime              DateTime
   observation           String?
+  status                StatusAppointment   @default(pending)
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
   professionalService   ProfessionalService @relation(fields: [professionalServiceId], references: [id])

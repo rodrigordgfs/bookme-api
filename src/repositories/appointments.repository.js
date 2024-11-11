@@ -21,6 +21,7 @@ const postAppointment = async (
             id: professionalServiceId,
           },
         },
+        status: "pending",
         dateTime,
         observation,
       },
@@ -82,6 +83,7 @@ const patchAppointment = async (
   id,
   professionalServiceId,
   dateTime,
+  status,
   observation
 ) => {
   try {
@@ -95,6 +97,7 @@ const patchAppointment = async (
             id: professionalServiceId,
           },
         },
+        status: status,
         dateTime,
         observation,
       },
@@ -204,6 +207,7 @@ const getAppointments = async (start_date, end_date) => {
             },
           },
         },
+        status: true,
         dateTime: true,
         observation: true,
         createdAt: true,
@@ -267,6 +271,7 @@ const getAppointmentById = async (id) => {
             },
           },
         },
+        status: true,
         dateTime: true,
         observation: true,
         createdAt: true,

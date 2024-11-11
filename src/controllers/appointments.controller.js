@@ -7,6 +7,7 @@ import {
   deleteAppointmentSchemaParams,
 } from "../schemas/index.js";
 import appointmentsRepository from "../repositories/appointments.repository.js";
+import { z } from "zod";
 
 const postAppointment = async (request, reply) => {
   try {
@@ -23,6 +24,16 @@ const postAppointment = async (request, reply) => {
     reply.status(201).send(appointment);
   } catch (error) {
     console.log(error);
+    if (error instanceof z.ZodError) {
+      return reply.code(StatusCodes.BAD_REQUEST).send({
+        error: error.errors.map((error) => {
+          return {
+            message: error.message,
+            field: error.path[0],
+          };
+        }),
+      });
+    }
 
     if (error.message === "Professional service not found") {
       return reply.code(404).send({
@@ -58,6 +69,17 @@ const patchAppointment = async (request, reply) => {
     reply.send(appointment);
   } catch (error) {
     console.log(error);
+    if (error instanceof z.ZodError) {
+      return reply.code(StatusCodes.BAD_REQUEST).send({
+        error: error.errors.map((error) => {
+          return {
+            message: error.message,
+            field: error.path[0],
+          };
+        }),
+      });
+    }
+
     if (error.message === "Appointment not found") {
       return reply.code(404).send({
         error: "Agendamento não encontrado",

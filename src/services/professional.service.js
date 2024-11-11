@@ -3,8 +3,9 @@ import serviceRepositorie from "../repositories/service.repositorie.js";
 import userRepositorie from "../repositories/user.repositorie.js";
 import { StatusCodes } from "http-status-codes";
 import AppError from "../utils/error.js";
+import { isBase64 } from "../utils/isBase64.js";
 
-const postProfessional = async (id_user, specialty, hiringDate) => {
+const postProfessional = async (id_user, specialty, photo) => {
   const userExists = await userRepositorie.getUserById(id_user);
   if (!userExists) {
     throw new AppError("User not found", StatusCodes.NOT_FOUND);
@@ -16,29 +17,37 @@ const postProfessional = async (id_user, specialty, hiringDate) => {
     throw new AppError("Professional already exists", StatusCodes.CONFLICT);
   }
 
-  const hiringDateISO = new Date(hiringDate);
 
   const professional = await professionalRepositorie.postProfessional(
     id_user,
-    specialty,
-    hiringDateISO
+    specialty
   );
-  return professional;
+
+  const photoUrl = await professionalRepositorie.uploadProfissionalImage(professional.id, photo)
+
+  return {
+    ...professional,
+    photoUrl
+  };
 };
 
-const patchProfessional = async (id, specialty, hiringDate) => {
+const patchProfessional = async (id, specialty, photo) => {
   const professional = await professionalRepositorie.getProfessionalById(id);
   if (!professional) {
     throw new AppError("Professional not found", StatusCodes.NOT_FOUND);
   }
 
-  const hiringDateISO = new Date(hiringDate);
+  let newPhoto = null
+  if (isBase64(photo)) {
+    newPhoto = await professionalRepositorie.updatedProfessional(professional.id, photo)
+  }
 
   const updatedProfessional = await professionalRepositorie.patchProfessional(
     id,
     specialty,
-    hiringDateISO
+    newPhoto ? newPhoto : professional.photoUrl
   );
+
   return updatedProfessional;
 };
 
@@ -50,8 +59,8 @@ const getProfessionalById = async (id) => {
   return professional;
 };
 
-const getProfessionals = async () => {
-  const professionals = await professionalRepositorie.getProfessionals();
+const getProfessionals = async (services) => {
+  const professionals = await professionalRepositorie.getProfessionals(services);
   return professionals;
 };
 

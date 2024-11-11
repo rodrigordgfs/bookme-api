@@ -1,4 +1,3 @@
-// import dashboardRepositorie from "../repositories/dashboard.repository.js";
 import appointmentRepositorie from "../repositories/appointments.repository.js";
 import {
   startOfMonth,
@@ -8,8 +7,6 @@ import {
   subMonths,
   subDays,
 } from "date-fns";
-// import { StatusCodes } from "http-status-codes";
-// import AppError from "../utils/error.js";
 
 const groupAppointmentsByMonth = (appointments) => {
   const groupedByMonth = {};

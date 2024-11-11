@@ -1,5 +1,4 @@
 import dashboardService from "../services/dashboard.service.js";
-// import dashboardRepository from "../repositories/dashboard.repository.js";
 import { z } from "zod";
 import { StatusCodes } from "http-status-codes";
 
@@ -60,6 +59,17 @@ const getDashboardAppointmentsInterval = async (request, reply) => {
     reply.send(appointments).status(StatusCodes.OK);
   } catch (error) {
     console.log(error);
+    if (error instanceof z.ZodError) {
+      return reply.code(StatusCodes.BAD_REQUEST).send({
+        error: error.errors.map((error) => {
+          return {
+            message: error.message,
+            field: error.path[0],
+          };
+        }),
+      });
+    }
+    
     reply.code(500).send({
       error: "Ocorreu um erro ao buscar os agendamentos",
     });
@@ -75,6 +85,17 @@ const getDashboardServicesInterval = async (request, reply) => {
     reply.send(services).status(StatusCodes.OK);
   } catch (error) {
     console.log(error);
+    if (error instanceof z.ZodError) {
+      return reply.code(StatusCodes.BAD_REQUEST).send({
+        error: error.errors.map((error) => {
+          return {
+            message: error.message,
+            field: error.path[0],
+          };
+        }),
+      });
+    }
+    
     reply.code(500).send({
       error: "Ocorreu um erro ao buscar os serviços",
     });

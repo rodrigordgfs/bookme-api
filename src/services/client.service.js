@@ -2,7 +2,6 @@ import clientRepository from "../repositories/client.repository.js";
 import userRepositorie from "../repositories/user.repositorie.js";
 import { StatusCodes } from "http-status-codes";
 import AppError from "../utils/error.js";
-import { isValidURL } from "../utils/isValidURL.js";
 import { isBase64 } from "../utils/isBase64.js";
 
 const postClient = async (id_user, phone, birthDate, gender, photo) => {
@@ -44,8 +43,9 @@ const patchClient = async (id, phone, birthDate, gender, photo) => {
   console.log('isBase64', isBase64(photo));
   
 
+  let newPhoto = null
   if (isBase64(photo)) {
-    photo = await clientRepository.uploadClientImage(client.id, photo); 
+    newPhoto = await clientRepository.uploadClientImage(client.id, photo); 
   }
 
   const client = await clientRepository.patchClient(
@@ -53,13 +53,10 @@ const patchClient = async (id, phone, birthDate, gender, photo) => {
     phone,
     birthDateISO,
     gender,
-    photo
+    newPhoto
   );
 
-  return {
-    ...client,
-    photoURL: photo,
-  };
+  return client;
 };
 
 

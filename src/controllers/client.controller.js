@@ -7,6 +7,7 @@ import {
   getClientSchemaParams,
   deleteClientSchemaParams,
 } from "../schemas/index.js";
+import { z } from "zod";
 
 const postClient = async (request, reply) => {
   try {

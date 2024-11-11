@@ -15,7 +15,7 @@ import { z } from "zod";
 
 const postProfessional = async (request, reply) => {
   try {
-    const { id_user, specialty, hiringDate } = postProfessionalSchemaBody.parse(
+    const { id_user, specialty, photo } = postProfessionalSchemaBody.parse(
       request.body
     );
 
@@ -24,11 +24,13 @@ const postProfessional = async (request, reply) => {
     const professional = await professionalService.postProfessional(
       id_user,
       specialty,
-      hiringDate
+      photo
     );
 
     reply.status(StatusCodes.CREATED).send(professional);
   } catch (error) {
+    console.log(error);
+
     if (error instanceof z.ZodError) {
       return reply.code(StatusCodes.BAD_REQUEST).send({
         error: error.errors.map((error) => {
@@ -59,18 +61,20 @@ const postProfessional = async (request, reply) => {
 const patchProfessional = async (request, reply) => {
   try {
     const { id } = patchProfessionalSchemaParams.parse(request.params);
-    const { specialty, hiringDate } = patchProfessionalSchemaBody.parse(
+    const { specialty, photo } = patchProfessionalSchemaBody.parse(
       request.body
     );
 
     const updatedProfessional = await professionalService.patchProfessional(
       id,
       specialty,
-      hiringDate
+      photo
     );
 
     reply.send(updatedProfessional);
   } catch (error) {
+    console.log(error);
+
     if (error instanceof z.ZodError) {
       return reply.code(StatusCodes.BAD_REQUEST).send({
         error: error.errors.map((error) => {
@@ -127,10 +131,32 @@ const getProfessionalById = async (request, reply) => {
 
 const getProfessionals = async (request, reply) => {
   try {
-    const professionals = await professionalService.getProfessionals();
+    const schema = z.object({
+      services: z
+        .union([z.boolean(), z.string()])
+        .optional()
+        .transform((value) => value === "true" || value === true),
+    });
+    const { services } = schema.parse(request.query);
+    console.log(services);
+    
+
+    const professionals = await professionalService.getProfessionals(services);
 
     reply.send(professionals);
   } catch (error) {
+    console.log(error);
+    if (error instanceof z.ZodError) {
+      return reply.code(StatusCodes.BAD_REQUEST).send({
+        error: error.errors.map((error) => {
+          return {
+            message: error.message,
+            field: error.path[0],
+          };
+        }),
+      });
+    }
+
     reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
       error: "Ocorreu um erro ao buscar os profissionais",
     });
@@ -173,12 +199,12 @@ const postProfessionalService = async (request, reply) => {
     const { id_professional, id_service } =
       postProfessionalServiceSchemaParams.parse(request.params);
 
-    await professionalService.postProfessionalService(
+    const service =  await professionalService.postProfessionalService(
       id_professional,
       id_service
     );
 
-    reply.code(StatusCodes.CREATED).send();
+    reply.code(StatusCodes.CREATED).send(service);
   } catch (error) {
     console.log(error);
     if (error instanceof z.ZodError) {

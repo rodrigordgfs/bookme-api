@@ -176,16 +176,14 @@ const deleteClient = async (id) => {
 
 const uploadClientImage = async (id_client, photoBase64) => {
   try {
-    // Extrair a extensão da imagem
     const match = photoBase64.match(/^data:image\/(\w+);base64,/);
-    const extension = match ? match[1] : "jpeg"; // Se não encontrar, assume 'jpeg'
+    const extension = match ? match[1] : "jpeg";
 
     const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Buffer.from(base64Data, "base64");
 
     const fileName = `client/${id_client}.${extension}`;
 
-    // Verificar se a imagem já existe
     const { data: existingFile, error: getError } = await supabase.storage
       .from("clients")
       .list("client", { search: `${id_client}.${extension}` });
@@ -195,7 +193,6 @@ const uploadClientImage = async (id_client, photoBase64) => {
       throw getError;
     }
 
-    // Se o arquivo existir, excluí-lo
     if (existingFile && existingFile.length > 0) {
       const { error: deleteError } = await supabase.storage
         .from("clients")
@@ -207,7 +204,6 @@ const uploadClientImage = async (id_client, photoBase64) => {
       }
     }
 
-    // Fazer o upload da nova imagem
     const { data, error } = await supabase.storage
       .from("clients")
       .upload(fileName, buffer, {
@@ -221,12 +217,10 @@ const uploadClientImage = async (id_client, photoBase64) => {
       throw error;
     }
 
-    // Obter URL pública da imagem
     const newPhoto = supabase.storage
       .from("clients")
       .getPublicUrl(fileName);
 
-    // Atualizar a URL da imagem no banco de dados
     await prisma.client.update({
       where: {
         id: id_client,

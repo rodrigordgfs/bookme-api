@@ -1,17 +1,26 @@
 import appointmentRepositorie from "../repositories/appointments.repository.js";
-import {
-  startOfMonth,
-  endOfMonth,
-  isWithinInterval,
-  parseISO,
-  subMonths,
-  subDays,
-} from "date-fns";
+import { startOfMonth, endOfMonth, subMonths, subDays } from "date-fns";
+
+const getAppointmentsForPeriod = async (startDate, endDate, status = null) => {
+  return await appointmentRepositorie.getAppointments(
+    startDate,
+    endDate,
+    status
+  );
+};
+
+const calculateTotalAmount = (appointments) => {
+  return appointments.reduce((total, appointment) => {
+    return total + (appointment.professionalService.service.price || 0);
+  }, 0);
+};
+
+const calculatePercentageChange = (current, previous) => {
+  return previous ? ((current - previous) / previous) * 100 : 0;
+};
 
 const groupAppointmentsByMonth = (appointments) => {
-  const groupedByMonth = {};
-
-  appointments.forEach((appointment) => {
+  return appointments.reduce((groupedByMonth, appointment) => {
     const appointmentDate = new Date(appointment.dateTime);
     const monthKey =
       appointmentDate
@@ -23,52 +32,35 @@ const groupAppointmentsByMonth = (appointments) => {
       appointmentDate.getFullYear().toString().slice(-2);
 
     if (!groupedByMonth[monthKey]) {
-      groupedByMonth[monthKey] = {
-        totalAmount: 0,
-      };
+      groupedByMonth[monthKey] = { totalAmount: 0 };
     }
 
     groupedByMonth[monthKey].totalAmount +=
       appointment.professionalService.service.price || 0;
-  });
-
-  return groupedByMonth;
+    return groupedByMonth;
+  }, {});
 };
 
 const getTotalMonth = async () => {
   const startOfCurrentMonth = startOfMonth(new Date());
   const endOfCurrentMonth = endOfMonth(new Date());
-
   const startOfLastMonth = startOfMonth(subMonths(new Date(), 1));
   const endOfLastMonth = endOfMonth(subMonths(new Date(), 1));
 
-  const appointmentsCurrentMonth = await appointmentRepositorie.getAppointments(
-    startOfCurrentMonth,
-    endOfCurrentMonth
-  );
-  const totalReceptCurrentMonth = appointmentsCurrentMonth.reduce(
-    (total, appointment) => {
-      return total + (appointment.professionalService.service.price || 0);
-    },
-    0
-  );
+  const [appointmentsCurrentMonth, appointmentsLastMonth] = await Promise.all([
+    getAppointmentsForPeriod(startOfCurrentMonth, endOfCurrentMonth),
+    getAppointmentsForPeriod(startOfLastMonth, endOfLastMonth),
+  ]);
 
-  const appointmentsLastMonth = await appointmentRepositorie.getAppointments(
-    startOfLastMonth,
-    endOfLastMonth
+  const totalReceptCurrentMonth = calculateTotalAmount(
+    appointmentsCurrentMonth
   );
-  const totalReceptLastMonth = appointmentsLastMonth.reduce(
-    (total, appointment) => {
-      return total + (appointment.professionalService.service.price || 0);
-    },
-    0
-  );
+  const totalReceptLastMonth = calculateTotalAmount(appointmentsLastMonth);
 
-  const percentageChange = totalReceptLastMonth
-    ? ((totalReceptCurrentMonth - totalReceptLastMonth) /
-        totalReceptLastMonth) *
-      100
-    : 0;
+  const percentageChange = calculatePercentageChange(
+    totalReceptCurrentMonth,
+    totalReceptLastMonth
+  );
 
   return {
     amount: totalReceptCurrentMonth,
@@ -80,28 +72,21 @@ const getTotalMonth = async () => {
 const getAppointmentsMonth = async () => {
   const startOfCurrentMonth = startOfMonth(new Date());
   const endOfCurrentMonth = endOfMonth(new Date());
-
   const startOfLastMonth = startOfMonth(subMonths(new Date(), 1));
   const endOfLastMonth = endOfMonth(subMonths(new Date(), 1));
 
-  const appointmentsCurrentMonth = await appointmentRepositorie.getAppointments(
-    startOfCurrentMonth,
-    endOfCurrentMonth
-  );
-
-  const appointmentsLastMonth = await appointmentRepositorie.getAppointments(
-    startOfLastMonth,
-    endOfLastMonth
-  );
+  const [appointmentsCurrentMonth, appointmentsLastMonth] = await Promise.all([
+    getAppointmentsForPeriod(startOfCurrentMonth, endOfCurrentMonth),
+    getAppointmentsForPeriod(startOfLastMonth, endOfLastMonth),
+  ]);
 
   const currentMonthAppointments = appointmentsCurrentMonth.length;
   const lastMonthAppointments = appointmentsLastMonth.length;
 
-  const percentageChange = lastMonthAppointments
-    ? ((currentMonthAppointments - lastMonthAppointments) /
-        lastMonthAppointments) *
-      100
-    : 0;
+  const percentageChange = calculatePercentageChange(
+    currentMonthAppointments,
+    lastMonthAppointments
+  );
 
   return {
     appointments: currentMonthAppointments,
@@ -113,27 +98,21 @@ const getAppointmentsMonth = async () => {
 const getAppointmentsDay = async () => {
   const startOfCurrentDay = new Date();
   const endOfCurrentDay = new Date();
-
   const startOfLastDay = subDays(new Date(), 1);
   const endOfLastDay = subDays(new Date(), 1);
 
-  const appointmentsCurrentDay = await appointmentRepositorie.getAppointments(
-    startOfCurrentDay,
-    endOfCurrentDay
-  );
-
-  const appointmentsLastDay = await appointmentRepositorie.getAppointments(
-    startOfLastDay,
-    endOfLastDay
-  );
+  const [appointmentsCurrentDay, appointmentsLastDay] = await Promise.all([
+    getAppointmentsForPeriod(startOfCurrentDay, endOfCurrentDay),
+    getAppointmentsForPeriod(startOfLastDay, endOfLastDay),
+  ]);
 
   const currentDayAppointments = appointmentsCurrentDay.length;
   const lastDayAppointments = appointmentsLastDay.length;
 
-  const percentageChange = lastDayAppointments
-    ? ((currentDayAppointments - lastDayAppointments) / lastDayAppointments) *
-      100
-    : 0;
+  const percentageChange = calculatePercentageChange(
+    currentDayAppointments,
+    lastDayAppointments
+  );
 
   return {
     appointments: currentDayAppointments,
@@ -146,65 +125,54 @@ const getAppointmentsInterval = async (start_date, end_date) => {
   const startDateISO = new Date(start_date);
   const endDateISO = new Date(end_date);
 
-  const appointmentsInterval = await appointmentRepositorie.getAppointments(
+  const appointmentsInterval = await getAppointmentsForPeriod(
     startDateISO,
     endDateISO
   );
 
-  const appointmentsByMonth = groupAppointmentsByMonth(appointmentsInterval);
-
-  return appointmentsByMonth;
+  return groupAppointmentsByMonth(appointmentsInterval);
 };
 
 const getServicesInterval = async (start_date, end_date) => {
   const startDateISO = new Date(start_date);
   const endDateISO = new Date(end_date);
 
-  const appointmentsInterval = await appointmentRepositorie.getAppointments(
+  const appointmentsInterval = await getAppointmentsForPeriod(
     startDateISO,
     endDateISO
   );
 
-  const services = {};
-
-  appointmentsInterval.forEach((appointment) => {
+  return appointmentsInterval.reduce((services, appointment) => {
     const serviceName = appointment.professionalService.service.name;
     if (serviceName) {
-      if (!services[serviceName]) {
-        services[serviceName] = 0;
-      }
-      services[serviceName] += 1;
+      services[serviceName] = (services[serviceName] || 0) + 1;
     }
-  });
-
-  return services;
+    return services;
+  }, {});
 };
 
 const getAppointmentsCanceled = async () => {
   const startOfCurrentMonth = startOfMonth(new Date());
   const endOfCurrentMonth = endOfMonth(new Date());
-
   const startOfLastMonth = startOfMonth(subMonths(new Date(), 1));
   const endOfLastMonth = endOfMonth(subMonths(new Date(), 1));
 
-  const appointmentsCurrentMonth = await appointmentRepositorie.getAppointments(
-    startOfCurrentMonth,
-    endOfCurrentMonth,
-    "canceled"
-  );
-
-  const appointmentsLastMonth = await appointmentRepositorie.getAppointments(
-    startOfLastMonth,
-    endOfLastMonth,
-    "canceled"
-  );
+  const [appointmentsCurrentMonth, appointmentsLastMonth] = await Promise.all([
+    getAppointmentsForPeriod(
+      startOfCurrentMonth,
+      endOfCurrentMonth,
+      "canceled"
+    ),
+    getAppointmentsForPeriod(startOfLastMonth, endOfLastMonth, "canceled"),
+  ]);
 
   const currentMonthAppointments = appointmentsCurrentMonth.length;
   const lastMonthAppointments = appointmentsLastMonth.length;
 
-  const percentageChange = lastMonthAppointments
-    ? ((currentMonthAppointments - lastMonthAppointments) / lastMonthAppointments) * 100
-    : 0;
+  const percentageChange = calculatePercentageChange(
+    currentMonthAppointments,
+    lastMonthAppointments
+  );
 
   return {
     appointments: currentMonthAppointments,
@@ -212,7 +180,6 @@ const getAppointmentsCanceled = async () => {
     percentageChange: parseFloat(percentageChange.toFixed(2)),
   };
 };
-
 
 export default {
   getTotalMonth,

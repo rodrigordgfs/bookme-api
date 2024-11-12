@@ -2,116 +2,79 @@ import userService from "../services/user.service.js";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 
+const handleErrorResponse = (error, reply) => {
+  if (error instanceof z.ZodError) {
+    return reply.code(StatusCodes.BAD_REQUEST).send({
+      error: error.errors.map(({ message, path }) => ({
+        message,
+        field: path[0],
+      })),
+    });
+  }
+
+  const errorMessages = {
+    "User already exists": StatusCodes.CONFLICT,
+    "Email or password incorrect": StatusCodes.UNAUTHORIZED,
+    "User not found": StatusCodes.NOT_FOUND,
+  };
+
+  const statusCode =
+    errorMessages[error.message] || StatusCodes.INTERNAL_SERVER_ERROR;
+  reply.code(statusCode).send({
+    error: error.message || "Ocorreu um erro interno",
+  });
+};
+
 const register = async (request, reply) => {
   try {
-    const schemaBody = z.object({
+    const schema = z.object({
       name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
       email: z.string().email("E-mail inválido"),
       password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
     });
+    const { name, email, password } = schema.parse(request.body);
 
-    const body = schemaBody.parse(request.body);
-
-    const user = await userService.register(
-      body.name,
-      body.email,
-      body.password
-    );
-
+    const user = await userService.register(name, email, password);
     reply.code(StatusCodes.CREATED).send(user);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "User already exists") {
-      return reply.code(StatusCodes.CONFLICT).send({
-        error: "Usuário já cadastrado",
-      });
-    } else {
-      return reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-        error: "Ocorreu um erro ao registrar o usuário",
-      });
-    }
+    handleErrorResponse(error, reply);
   }
 };
 
 const login = async (request, reply) => {
   try {
-    const schemaBody = z.object({
+    const schema = z.object({
       email: z.string().email("E-mail inválido"),
       password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
     });
+    const { email, password } = schema.parse(request.body);
 
-    const body = schemaBody.parse(request.body);
-
-    const user = await userService.login(body.email, body.password);
-
+    const user = await userService.login(email, password);
     reply.send(user);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "Email or password incorrect") {
-      return reply.code(StatusCodes.UNAUTHORIZED).send({
-        error: "Email ou senha incorretos",
-      });
-    }
-
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao fazer login",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 
 const getUserById = async (request, reply) => {
   try {
-    const schemaParams = z.object({
-      id: z.string().uuid("ID deve ser um UUID"),
-    });
-
-    const { id } = schemaParams.parse(request.params);
+    const { id } = z
+      .object({ id: z.string().uuid("ID deve ser um UUID") })
+      .parse(request.params);
 
     const user = await userService.getUserById(id);
-
     reply.send(user);
   } catch (error) {
-    if (error.message === "User not found") {
-      return reply.code(StatusCodes.NOT_FOUND).send({
-        error: "Usuário não encontrado",
-      });
-    }
-
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao buscar o usuário",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 
 const getUsers = async (request, reply) => {
   try {
     const users = await userService.getUsers();
-
     reply.send(users);
   } catch (error) {
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao buscar os usuários",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 
@@ -120,62 +83,34 @@ const patchUser = async (request, reply) => {
     const schemaParams = z.object({
       id: z.string().uuid("ID deve ser um UUID"),
     });
-
     const schemaBody = z.object({
-      name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+      name: z
+        .string()
+        .min(2, "Nome deve ter pelo menos 2 caracteres")
+        .optional(),
+      email: z.string().email("E-mail inválido").optional(),
     });
 
     const { id } = schemaParams.parse(request.params);
     const { name, email } = schemaBody.parse(request.body);
 
     const user = await userService.patchUser(id, name, email);
-
     reply.send(user);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "User not found") {
-      return reply.code(StatusCodes.NOT_FOUND).send({
-        error: "Usuário não encontrado",
-      });
-    }
-
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao atualizar o usuário",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 
 const deleteUser = async (request, reply) => {
   try {
-    const schemaParams = z.object({
-      id: z.string().uuid("ID deve ser um UUID"),
-    });
-
-    const { id } = schemaParams.parse(request.params);
+    const { id } = z
+      .object({ id: z.string().uuid("ID deve ser um UUID") })
+      .parse(request.params);
 
     await userService.deleteUser(id);
-
     reply.code(StatusCodes.NO_CONTENT).send();
   } catch (error) {
-    if (error.message === "User not found") {
-      return reply.code(StatusCodes.NOT_FOUND).send({
-        error: "Usuário não encontrado",
-      });
-    }
-
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao deletar o usuário",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 
@@ -183,7 +118,7 @@ export default {
   register,
   login,
   getUserById,
+  getUsers,
   patchUser,
   deleteUser,
-  getUsers,
 };

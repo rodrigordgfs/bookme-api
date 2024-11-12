@@ -3,35 +3,53 @@ import userService from "../services/user.service.js";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 
+const handleErrorResponse = (error, reply) => {
+  if (error instanceof z.ZodError) {
+    const errors = error.errors.map(({ message, path }) => ({
+      message,
+      field: path[0],
+    }));
+    return reply.code(StatusCodes.BAD_REQUEST).send({ error: errors });
+  }
+
+  const errorMessages = {
+    "User not found": StatusCodes.NOT_FOUND,
+    "Client already exists": StatusCodes.CONFLICT,
+    "Client not found": StatusCodes.NOT_FOUND,
+  };
+  const statusCode =
+    errorMessages[error.message] || StatusCodes.INTERNAL_SERVER_ERROR;
+
+  return reply.code(statusCode).send({
+    error: error.message || "Ocorreu um erro interno",
+  });
+};
+
+const schemaBodyCommon = z.object({
+  phone: z.string().min(10, "Telefone inválido").max(11, "Telefone inválido"),
+  birthDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Data de nascimento inválida",
+  }),
+  gender: z.enum(["M", "F", "O"], "Gênero inválido"),
+  photo: z
+    .string()
+    .regex(
+      /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/,
+      "Formato de imagem inválido"
+    )
+    .optional(),
+});
+
 const postClient = async (request, reply) => {
   try {
-    const schemaBody = z.object({
+    const schemaBody = schemaBodyCommon.extend({
       id_user: z.string().uuid("ID de usuário inválido"),
-      phone: z
-        .string()
-        .min(10, "Telefone inválido")
-        .max(11, "Telefone inválido"),
-      birthDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: "Data de nascimento inválida",
-      }),
-      gender: z.string().refine((g) => g === "M" || g === "F" || g === "O", {
-        message: "Gênero inválido",
-      }),
-      photo: z
-        .string()
-        .regex(
-          /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/,
-          "Formato de imagem inválido"
-        )
-        .optional(),
     });
-
     const { id_user, phone, birthDate, gender, photo } = schemaBody.parse(
       request.body
     );
 
     await userService.getUserById(id_user);
-
     const client = await clientService.postClient(
       id_user,
       phone,
@@ -42,51 +60,16 @@ const postClient = async (request, reply) => {
 
     reply.status(StatusCodes.CREATED).send(client);
   } catch (error) {
-    console.log(error);
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "User not found") {
-      return reply.code(StatusCodes.NOT_FOUND).send({
-        error: "Usuário não encontrado",
-      });
-    } else if (error.message === "Client already exists") {
-      return reply.code(StatusCodes.CONFLICT).send({
-        error: "Cliente já cadastrado",
-      });
-    }
-
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao cadastrar o cliente",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 
 const patchClient = async (request, reply) => {
   try {
     const schemaParams = z.object({
-      id: z.string().uuid("ID de usuário inválido"),
+      id: z.string().uuid("ID de cliente inválido"),
     });
-
-    const schemaBody = z.object({
-      phone: z
-        .string()
-        .min(10, "Telefone inválido")
-        .max(11, "Telefone inválido"),
-      birthDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: "Data de nascimento inválida",
-      }),
-      gender: z.string().refine((g) => g === "M" || g === "F" || g === "O", {
-        message: "Gênero inválido",
-      }),
+    const schemaBody = schemaBodyCommon.extend({
       photo: z
         .string()
         .optional()
@@ -109,126 +92,56 @@ const patchClient = async (request, reply) => {
     const { phone, birthDate, gender, photo } = schemaBody.parse(request.body);
 
     await clientService.getClientById(id);
-
-    const birthDateISO = new Date(birthDate);
-
     const client = await clientService.patchClient(
       id,
       phone,
-      birthDateISO,
+      new Date(birthDate),
       gender,
       photo
     );
 
-    reply.send(client).status(StatusCodes.OK);
+    reply.status(StatusCodes.OK).send(client);
   } catch (error) {
-    console.log(error);
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "Client not found") {
-      return reply.code(StatusCodes.NOT_FOUND).send({
-        error: "Cliente não encontrado",
-      });
-    }
-
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao atualizar o cliente",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 
 const getClients = async (request, reply) => {
   try {
     const clients = await clientService.getClients();
-    reply.send(clients).status(StatusCodes.OK);
+    reply.status(StatusCodes.OK).send(clients);
   } catch (error) {
-    console.log(error);
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao buscar os clientes",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 
 const getClientById = async (request, reply) => {
   try {
     const schemaParams = z.object({
-      id: z.string().uuid("ID de usuário inválido"),
+      id: z.string().uuid("ID de cliente inválido"),
     });
-
     const { id } = schemaParams.parse(request.params);
 
     const client = await clientService.getClientById(id);
-
-    reply.send(client).status(StatusCodes.OK);
+    reply.status(StatusCodes.OK).send(client);
   } catch (error) {
-    console.log(error);
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "Client not found") {
-      return reply.code(StatusCodes.NOT_FOUND).send({
-        error: "Cliente não encontrado",
-      });
-    }
-
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao buscar o cliente",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 
 const deleteClient = async (request, reply) => {
   try {
     const schemaParams = z.object({
-      id: z.string().uuid("ID de usuário inválido"),
+      id: z.string().uuid("ID de cliente inválido"),
     });
-
     const { id } = schemaParams.parse(request.params);
 
     await clientService.getClientById(id);
-
     await clientService.deleteClient(id);
 
-    reply.code(StatusCodes.NO_CONTENT).send();
+    reply.status(StatusCodes.NO_CONTENT).send();
   } catch (error) {
-    console.log(error);
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "Client not found") {
-      return reply.code(StatusCodes.NOT_FOUND).send({
-        error: "Cliente não encontrado",
-      });
-    }
-
-    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      error: "Ocorreu um erro ao deletar o cliente",
-    });
+    handleErrorResponse(error, reply);
   }
 };
 

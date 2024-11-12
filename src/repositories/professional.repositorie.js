@@ -1,84 +1,59 @@
 import { prisma } from "../libs/prisma.js";
 import { supabase } from "../libs/supabase.js";
 
+const baseProfessionalSelect = {
+  id: true,
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  photoUrl: true,
+  specialty: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+const handleError = (error) => {
+  console.error(error);
+  throw error;
+};
+
 const postProfessional = async (user_id, specialty, photoUrl) => {
   try {
-    const professional = await prisma.professional.create({
+    return await prisma.professional.create({
       data: {
         user: {
           connect: { id: user_id },
         },
         specialty,
-        photoUrl
+        photoUrl,
       },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          },
-        },
-        photoUrl: true,
-        specialty: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: baseProfessionalSelect,
     });
-    return professional;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
 const getProfessionalById = async (id) => {
   try {
-    const professional = await prisma.professional.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          },
-        },
-        photoUrl: true,
-        specialty: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.professional.findUnique({
+      where: { id },
+      select: baseProfessionalSelect,
     });
-    return professional;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
 const getProfessionals = async (service) => {
-  console.log(service);
-  
   try {
-    const professionals = await prisma.professional.findMany({
+    return await prisma.professional.findMany({
       select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        photoUrl: true,
-        specialty: true,
-        createdAt: true,
-        updatedAt: true,
+        ...baseProfessionalSelect,
         ...(service && {
           ProfessionalService: {
             select: {
@@ -89,7 +64,7 @@ const getProfessionals = async (service) => {
                   name: true,
                   description: true,
                   price: true,
-                  duration: true
+                  duration: true,
                 },
               },
             },
@@ -97,115 +72,56 @@ const getProfessionals = async (service) => {
         }),
       },
     });
-    return professionals;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
-
-const getProfessionalByUserId = async (id) => {
+const getProfessionalByUserId = async (userId) => {
   try {
-    const professional = await prisma.professional.findUnique({
-      where: {
-        userId: id,
-      },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          },
-        },
-        photoUrl: true,
-        specialty: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.professional.findUnique({
+      where: { userId },
+      select: baseProfessionalSelect,
     });
-    return professional;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
 const patchProfessional = async (id, specialty, photoUrl) => {
   try {
-    const professional = await prisma.professional.update({
-      where: {
-        id,
-      },
-      data: {
-        specialty,
-        photoUrl
-      },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          },
-        },
-        photoUrl: true,
-        specialty: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.professional.update({
+      where: { id },
+      data: { specialty, photoUrl },
+      select: baseProfessionalSelect,
     });
-    return professional;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
 const deleteProfessional = async (id) => {
   try {
-    const professional = await prisma.professional.delete({
-      where: {
-        id,
-      },
+    return await prisma.professional.delete({
+      where: { id },
     });
-    return professional;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
 const getProfessionalServiceByIdProfessionalIdService = async (
-  id_professional,
-  id_service
+  professionalId,
+  serviceId
 ) => {
   try {
-    const professionalService = await prisma.professionalService.findUnique({
+    return await prisma.professionalService.findUnique({
       where: {
-        professionalId_serviceId: {
-          professionalId: id_professional,
-          serviceId: id_service,
-        },
+        professionalId_serviceId: { professionalId, serviceId },
       },
       select: {
         id: true,
-        professional: {
-          select: {
-            id: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              },
-            },
-            specialty: true,
-          },
-        },
+        professional: { select: baseProfessionalSelect },
         service: {
           select: {
             id: true,
@@ -218,34 +134,18 @@ const getProfessionalServiceByIdProfessionalIdService = async (
         updatedAt: true,
       },
     });
-    return professionalService;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
 const getProfessionalServiceById = async (id) => {
   try {
-    const professionalService = await prisma.professionalService.findUnique({
-      where: {
-        id,
-      },
+    return await prisma.professionalService.findUnique({
+      where: { id },
       select: {
         id: true,
-        professional: {
-          select: {
-            id: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              },
-            },
-            specialty: true,
-          },
-        },
+        professional: { select: baseProfessionalSelect },
         service: {
           select: {
             id: true,
@@ -258,164 +158,110 @@ const getProfessionalServiceById = async (id) => {
         updatedAt: true,
       },
     });
-    return professionalService;
   } catch (error) {
-    console.log(error);
-    throw error;
-  }
-}
-
-const getProfessionalServiceByIdProfessional = async (id_professional) => {
-  try {
-    const professionalService = await prisma.professionalService.findMany({
-      where: {
-        professionalId: id_professional,
-      },
-      select: {
-        id: true,
-        service: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            price: true,
-          },
-        },
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-    return professionalService;
-  } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
-const postProfessionalService = async (id_professional, id_service) => {
+const getProfessionalServiceByIdProfessional = async (professionalId) => {
   try {
-    const professionalService = await prisma.professionalService.create({
+    return await prisma.professionalService.findMany({
+      where: { professionalId },
+      select: {
+        id: true,
+        service: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+          },
+        },
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+const postProfessionalService = async (professionalId, serviceId) => {
+  try {
+    return await prisma.professionalService.create({
       data: {
-        professional: {
-          connect: { id: id_professional },
-        },
-        service: {
-          connect: { id: id_service },
-        },
+        professional: { connect: { id: professionalId } },
+        service: { connect: { id: serviceId } },
       },
       select: {
         id: true,
-        professional: {
-          select: {
-            id: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              },
-            },
-            specialty: true,
-          },
-        },
+        professional: { select: baseProfessionalSelect },
         service: {
           select: {
             id: true,
             name: true,
             description: true,
             price: true,
-            duration: true
+            duration: true,
           },
         },
         createdAt: true,
         updatedAt: true,
       },
     });
-    return professionalService;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
-const deleteProfessionalService = async (id_professional, id_service) => {
+const deleteProfessionalService = async (professionalId, serviceId) => {
   try {
-    const professionalService = await prisma.professionalService.delete({
+    return await prisma.professionalService.delete({
       where: {
-        professionalId_serviceId: {
-          professionalId: id_professional,
-          serviceId: id_service,
-        },
+        professionalId_serviceId: { professionalId, serviceId },
       },
     });
-    return professionalService;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error);
   }
 };
 
-const uploadProfissionalImage = async (id_profissional, photoBase64) => {
+const uploadProfessionalImage = async (professionalId, photoBase64) => {
   try {
-    const match = photoBase64.match(/^data:image\/(\w+);base64,/);
-    const extension = match ? match[1] : "jpeg";
-
+    const extension =
+      photoBase64.match(/^data:image\/(\w+);base64,/)?.[1] || "jpeg";
     const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Buffer.from(base64Data, "base64");
+    const fileName = `professional/${professionalId}.${extension}`;
 
-    const fileName = `profissional/${id_profissional}.${extension}`;
-
-    const { data: existingFile, error: getError } = await supabase.storage
+    const { data: existingFile } = await supabase.storage
       .from("professionals")
-      .list("professional", { search: `${id_profissional}.${extension}` });
-
-    if (getError) {
-      console.error("Erro ao buscar arquivo existente:", getError);
-      throw getError;
-    }
-
-    if (existingFile && existingFile.length > 0) {
-      const { error: deleteError } = await supabase.storage
-        .from("professionals")
-        .remove([fileName]);
-
-      if (deleteError) {
-        console.error("Erro ao excluir arquivo existente:", deleteError);
-        throw deleteError;
-      }
+      .list("professional", { search: `${professionalId}.${extension}` });
+    if (existingFile?.length) {
+      await supabase.storage.from("professionals").remove([fileName]);
     }
 
     const { data, error } = await supabase.storage
-      .from("profissionals")
+      .from("professionals")
       .upload(fileName, buffer, {
         contentType: `image/${extension}`,
         cacheControl: "3600",
         upsert: false,
       });
+    if (error) throw error;
 
-    if (error) {
-      console.error("Erro ao fazer upload da imagem:", error);
-      throw error;
-    }
-
-    const newPhoto = supabase.storage
-      .from("profissionals")
-      .getPublicUrl(fileName);
+    const newPhotoUrl = supabase.storage
+      .from("professionals")
+      .getPublicUrl(fileName).data.publicUrl;
 
     await prisma.professional.update({
-      where: {
-        id: id_profissional,
-      },
-      data: {
-        photoUrl: newPhoto.data['publicUrl'],
-      },
+      where: { id: professionalId },
+      data: { photoUrl: newPhotoUrl },
     });
-    console.log("URL da imagem:", newPhoto.data['publicUrl']);
-    
-    return newPhoto.data['publicUrl'];
+
+    return newPhotoUrl;
   } catch (error) {
-    console.error(error);
-    throw error;
+    handleError(error);
   }
 };
 
@@ -431,5 +277,5 @@ export default {
   postProfessionalService,
   deleteProfessionalService,
   getProfessionalServiceById,
-  uploadProfissionalImage
+  uploadProfessionalImage,
 };

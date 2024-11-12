@@ -2,45 +2,37 @@ import serviceService from "../services/service.service.js";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 
+const serviceSchema = z.object({
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  description: z.string().min(2, "Descrição deve ter pelo menos 2 caracteres"),
+  duration: z.number().int().positive("Duração deve ser um número positivo"),
+  price: z.number().int().positive("Preço deve ser um número positivo"),
+});
+
+const idSchema = z.object({
+  id: z.string().uuid("ID deve ser um UUID"),
+});
+
+const formatZodErrors = (errors) => {
+  return errors.map((error) => ({
+    message: error.message,
+    field: error.path[0],
+  }));
+};
+
 const postService = async (request, reply) => {
   try {
-    const schemaBody = z.object({
-      name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-      description: z
-        .string()
-        .min(2, "Descrição deve ter pelo menos 2 caracteres"),
-      duration: z
-        .number()
-        .int()
-        .positive("Duração deve ser um número positivo"),
-      price: z.number().int().positive("Preço deve ser um número positivo"),
-    });
-
-    const { name, description, duration, price } = schemaBody.parse(
-      request.body
-    );
-
-    const service = await serviceService.postService(
-      name,
-      description,
-      duration,
-      price
-    );
+    const data = serviceSchema.parse(request.body);
+    const service = await serviceService.postService(data);
 
     reply.status(StatusCodes.CREATED).send(service);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     if (error instanceof z.ZodError) {
       return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
+        error: formatZodErrors(error.errors),
       });
     }
-
     reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
       error: "Ocorreu um erro ao cadastrar o serviço",
     });
@@ -49,103 +41,62 @@ const postService = async (request, reply) => {
 
 const patchService = async (request, reply) => {
   try {
-    const schemaParams = z.object({
-      id: z.string().uuid("ID deve ser um UUID"),
-    });
+    const { id } = idSchema.parse(request.params);
+    const data = serviceSchema.parse(request.body);
 
-    const schemaBody = z.object({
-      name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-      description: z
-        .string()
-        .min(2, "Descrição deve ter pelo menos 2 caracteres"),
-      duration: z
-        .number()
-        .int()
-        .positive("Duração deve ser um número positivo"),
-      price: z.number().int().positive("Preço deve ser um número positivo"),
-    });
+    const service = await serviceService.patchService(id, data);
 
-    const { id } = schemaParams.parse(request.params);
-    const { name, description, duration, price } = schemaBody.parse(
-      request.body
-    );
-
-    const service = await serviceService.patchService(
-      id,
-      name,
-      description,
-      duration,
-      price
-    );
-
-    reply.send(service);
-  } catch (error) {
-    console.log(error);
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "Service not found") {
+    if (!service) {
       return reply.code(StatusCodes.NOT_FOUND).send({
         error: "Serviço não encontrado",
       });
-    } else {
-      reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-        error: "Ocorreu um erro ao atualizar o serviço",
+    }
+
+    reply.send(service);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof z.ZodError) {
+      return reply.code(StatusCodes.BAD_REQUEST).send({
+        error: formatZodErrors(error.errors),
       });
     }
+    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
+      error: "Ocorreu um erro ao atualizar o serviço",
+    });
   }
 };
 
 const getServiceById = async (request, reply) => {
   try {
-    const schemaParams = z.object({
-      id: z.string().uuid("ID deve ser um UUID"),
-    });
-    const { id } = schemaParams.parse(request.params);
-
+    const { id } = idSchema.parse(request.params);
     const service = await serviceService.getServiceById(id);
 
-    reply.send(service);
-  } catch (error) {
-    console.log(error);
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "Service not found") {
+    if (!service) {
       return reply.code(StatusCodes.NOT_FOUND).send({
         error: "Serviço não encontrado",
       });
-    } else {
-      reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-        error: "Ocorreu um erro ao buscar o serviço",
+    }
+
+    reply.send(service);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof z.ZodError) {
+      return reply.code(StatusCodes.BAD_REQUEST).send({
+        error: formatZodErrors(error.errors),
       });
     }
+    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
+      error: "Ocorreu um erro ao buscar o serviço",
+    });
   }
 };
 
-const getServices = async (request, reply) => {
+const getServices = async (_, reply) => {
   try {
     const services = await serviceService.getServices();
-
     reply.send(services);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
       error: "Ocorreu um erro ao buscar os serviços",
     });
@@ -154,37 +105,27 @@ const getServices = async (request, reply) => {
 
 const deleteService = async (request, reply) => {
   try {
-    const schemaParams = z.object({
-      id: z.string().uuid("ID deve ser um UUID"),
-    });
+    const { id } = idSchema.parse(request.params);
 
-    const { id } = schemaParams.parse(request.params);
+    const deleted = await serviceService.deleteService(id);
 
-    await serviceService.deleteService(id);
-
-    reply.send().status(StatusCodes.NO_CONTENT);
-  } catch (error) {
-    console.log(error);
-    if (error instanceof z.ZodError) {
-      return reply.code(StatusCodes.BAD_REQUEST).send({
-        error: error.errors.map((error) => {
-          return {
-            message: error.message,
-            field: error.path[0],
-          };
-        }),
-      });
-    }
-
-    if (error.message === "Service not found") {
+    if (!deleted) {
       return reply.code(StatusCodes.NOT_FOUND).send({
         error: "Serviço não encontrado",
       });
-    } else {
-      reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-        error: "Ocorreu um erro ao deletar o serviço",
+    }
+
+    reply.code(StatusCodes.NO_CONTENT).send();
+  } catch (error) {
+    console.error(error);
+    if (error instanceof z.ZodError) {
+      return reply.code(StatusCodes.BAD_REQUEST).send({
+        error: formatZodErrors(error.errors),
       });
     }
+    reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
+      error: "Ocorreu um erro ao deletar o serviço",
+    });
   }
 };
 

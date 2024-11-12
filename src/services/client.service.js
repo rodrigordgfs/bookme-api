@@ -1,16 +1,22 @@
 import clientRepository from "../repositories/client.repository.js";
-import userRepositorie from "../repositories/user.repositorie.js";
+import userRepository from "../repositories/user.repositorie.js";
 import { StatusCodes } from "http-status-codes";
 import AppError from "../utils/error.js";
 import { isBase64 } from "../utils/isBase64.js";
 
-const postClient = async (id_user, phone, birthDate, gender, photo) => {
-  const userExists = await userRepositorie.getUserById(id_user);
-  if (!userExists) {
-    throw new AppError("User not found", StatusCodes.NOT_FOUND);
+const verifyResourceExistence = async (resourceExists, errorMessage) => {
+  if (!resourceExists) {
+    throw new AppError(errorMessage, StatusCodes.NOT_FOUND);
   }
+};
 
-  const clientExists = await clientRepository.getClientByUserId(id_user);
+const postClient = async (id_user, phone, birthDate, gender, photo) => {
+  const [userExists, clientExists] = await Promise.all([
+    userRepository.getUserById(id_user),
+    clientRepository.getClientByUserId(id_user),
+  ]);
+
+  await verifyResourceExistence(userExists, "User not found");
   if (clientExists) {
     throw new AppError("Client already exists", StatusCodes.CONFLICT);
   }
@@ -24,31 +30,29 @@ const postClient = async (id_user, phone, birthDate, gender, photo) => {
     gender
   );
 
-  const photoUrl = await clientRepository.uploadClientImage(client.id, photo); 
+  let photoUrl = null;
+  if (photo && isBase64(photo)) {
+    photoUrl = await clientRepository.uploadClientImage(client.id, photo);
+  }
 
   return {
     ...client,
-    photoUrl
+    photoUrl,
   };
 };
 
 const patchClient = async (id, phone, birthDate, gender, photo) => {
   const clientExists = await clientRepository.getClientById(id);
-  if (!clientExists) {
-    throw new AppError("Client not found", StatusCodes.NOT_FOUND);
-  }
+  await verifyResourceExistence(clientExists, "Client not found");
 
   const birthDateISO = new Date(birthDate);
 
-  console.log('isBase64', isBase64(photo));
-  
-
-  let newPhoto = null
-  if (isBase64(photo)) {
-    newPhoto = await clientRepository.uploadClientImage(client.id, photo); 
+  let newPhoto = null;
+  if (photo && isBase64(photo)) {
+    newPhoto = await clientRepository.uploadClientImage(clientExists.id, photo);
   }
 
-  const client = await clientRepository.patchClient(
+  const updatedClient = await clientRepository.patchClient(
     id,
     phone,
     birthDateISO,
@@ -56,9 +60,8 @@ const patchClient = async (id, phone, birthDate, gender, photo) => {
     newPhoto
   );
 
-  return client;
+  return updatedClient;
 };
-
 
 const getClients = async () => {
   const clients = await clientRepository.getClients();
@@ -67,9 +70,7 @@ const getClients = async () => {
 
 const getClientById = async (id) => {
   const clientExists = await clientRepository.getClientById(id);
-  if (!clientExists) {
-    throw new AppError("Client not found", StatusCodes.NOT_FOUND);
-  }
+  await verifyResourceExistence(clientExists, "Client not found");
 
   const client = await clientRepository.getClientById(id);
   return client;
@@ -77,9 +78,7 @@ const getClientById = async (id) => {
 
 const deleteClient = async (id) => {
   const clientExists = await clientRepository.getClientById(id);
-  if (!clientExists) {
-    throw new AppError("Client not found", StatusCodes.NOT_FOUND);
-  }
+  await verifyResourceExistence(clientExists, "Client not found");
 
   await clientRepository.deleteClient(id);
 };

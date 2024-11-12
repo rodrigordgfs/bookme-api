@@ -1,208 +1,100 @@
 import { prisma } from "../libs/prisma.js";
 import { supabase } from "../libs/supabase.js";
 
+const clientSelectFields = {
+  id: true,
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  },
+  phone: true,
+  birthDate: true,
+  gender: true,
+  photoUrl: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+const handleError = (error, message) => {
+  console.error(message, error);
+  throw error;
+};
+
 const postClient = async (id_user, phone, birthDate, gender) => {
   try {
-    const client = await prisma.client.create({
+    return await prisma.client.create({
       data: {
-        user: {
-          connect: { id: id_user },
-        },
+        user: { connect: { id: id_user } },
         phone,
         birthDate,
         gender,
       },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        phone: true,
-        birthDate: true,
-        gender: true,
-        photoUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: clientSelectFields,
     });
-    return client;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error, "Erro ao criar cliente");
   }
 };
 
 const patchClient = async (id, phone, birthDate, gender, photoUrl) => {
   try {
-    const client = await prisma.client.update({
-      where: {
-        id,
-      },
-      data: {
-        phone,
-        birthDate,
-        gender,
-        photoUrl
-      },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        phone: true,
-        birthDate: true,
-        gender: true,
-        photoUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.client.update({
+      where: { id },
+      data: { phone, birthDate, gender, photoUrl },
+      select: clientSelectFields,
     });
-    return client;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error, "Erro ao atualizar cliente");
   }
 };
 
 const getClients = async () => {
   try {
-    const clients = await prisma.client.findMany({
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        phone: true,
-        birthDate: true,
-        gender: true,
-        photoUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-    return clients;
+    return await prisma.client.findMany({ select: clientSelectFields });
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error, "Erro ao obter lista de clientes");
   }
 };
 
 const getClientById = async (id) => {
   try {
-    const client = await prisma.client.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        phone: true,
-        birthDate: true,
-        gender: true,
-        photoUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.client.findUnique({
+      where: { id },
+      select: clientSelectFields,
     });
-    return client;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error, "Erro ao obter cliente por ID");
   }
 };
 
 const getClientByUserId = async (id_user) => {
   try {
-    const client = await prisma.client.findFirst({
-      where: {
-        user: {
-          id: id_user,
-        },
-      },
-      select: {
-        id: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        phone: true,
-        birthDate: true,
-        gender: true,
-        photoUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.client.findFirst({
+      where: { user: { id: id_user } },
+      select: clientSelectFields,
     });
-    return client;
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error, "Erro ao obter cliente por ID do usuário");
   }
 };
 
 const deleteClient = async (id) => {
   try {
-    return await prisma.client.delete({
-      where: {
-        id,
-      },
-    });
+    return await prisma.client.delete({ where: { id } });
   } catch (error) {
-    console.log(error);
-    throw error;
+    handleError(error, "Erro ao deletar cliente");
   }
 };
 
 const uploadClientImage = async (id_client, photoBase64) => {
   try {
-    const match = photoBase64.match(/^data:image\/(\w+);base64,/);
-    const extension = match ? match[1] : "jpeg";
-
-    const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
-    const buffer = Buffer.from(base64Data, "base64");
-
+    const { extension, buffer } = processImageBase64(photoBase64, id_client);
     const fileName = `client/${id_client}.${extension}`;
 
-    const { data: existingFile, error: getError } = await supabase.storage
-      .from("clients")
-      .list("client", { search: `${id_client}.${extension}` });
-
-    if (getError) {
-      console.error("Erro ao buscar arquivo existente:", getError);
-      throw getError;
-    }
-
-    if (existingFile && existingFile.length > 0) {
-      const { error: deleteError } = await supabase.storage
-        .from("clients")
-        .remove([fileName]);
-
-      if (deleteError) {
-        console.error("Erro ao excluir arquivo existente:", deleteError);
-        throw deleteError;
-      }
-    }
+    await deleteExistingFile(fileName);
 
     const { data, error } = await supabase.storage
       .from("clients")
@@ -212,29 +104,48 @@ const uploadClientImage = async (id_client, photoBase64) => {
         upsert: false,
       });
 
-    if (error) {
-      console.error("Erro ao fazer upload da imagem:", error);
-      throw error;
-    }
+    if (error) throw new Error("Erro ao fazer upload da imagem");
 
-    const newPhoto = supabase.storage
-      .from("clients")
-      .getPublicUrl(fileName);
+    const newPhotoUrl = supabase.storage.from("clients").getPublicUrl(fileName)
+      .data.publicUrl;
 
     await prisma.client.update({
-      where: {
-        id: id_client,
-      },
-      data: {
-        photoUrl: newPhoto.data['publicUrl'],
-      },
+      where: { id: id_client },
+      data: { photoUrl: newPhotoUrl },
     });
-    console.log("URL da imagem:", newPhoto.data['publicUrl']);
-    
-    return newPhoto.data['publicUrl'];
+
+    console.log("URL da imagem:", newPhotoUrl);
+    return newPhotoUrl;
   } catch (error) {
-    console.error(error);
-    throw error;
+    handleError(error, "Erro ao fazer upload da imagem do cliente");
+  }
+};
+
+const processImageBase64 = (photoBase64, id_client) => {
+  const match = photoBase64.match(/^data:image\/(\w+);base64,/);
+  const extension = match ? match[1] : "jpeg";
+  const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
+  const buffer = Buffer.from(base64Data, "base64");
+
+  return { extension, buffer };
+};
+
+const deleteExistingFile = async (fileName) => {
+  const { data: existingFile, error: getError } = await supabase.storage
+    .from("clients")
+    .list("client", { search: fileName });
+
+  if (getError) {
+    throw new Error("Erro ao buscar arquivo existente");
+  }
+
+  if (existingFile && existingFile.length > 0) {
+    const { error: deleteError } = await supabase.storage
+      .from("clients")
+      .remove([fileName]);
+    if (deleteError) {
+      throw new Error("Erro ao excluir arquivo existente");
+    }
   }
 };
 
@@ -243,7 +154,7 @@ export default {
   patchClient,
   getClients,
   getClientById,
-  deleteClient,
   getClientByUserId,
+  deleteClient,
   uploadClientImage,
 };

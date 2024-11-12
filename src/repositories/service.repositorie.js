@@ -1,125 +1,80 @@
 import { prisma } from "../libs/prisma.js";
 
+const SERVICE_SELECT_FIELDS = {
+  id: true,
+  name: true,
+  description: true,
+  duration: true,
+  price: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+const logError = (error) => {
+  console.error("Database Error:", error);
+  throw new Error("An unexpected error occurred. Please try again.");
+};
+
 const postService = async (name, description, duration, price) => {
   try {
-    const service = await prisma.service.create({
-      data: {
-        name,
-        description,
-        duration,
-        price,
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        duration: true,
-        price: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.service.create({
+      data: { name, description, duration, price },
+      select: SERVICE_SELECT_FIELDS,
     });
-    return service;
   } catch (error) {
-    console.log(error);
-    throw error;
+    logError(error);
   }
 };
 
 const patchService = async (id, name, description, duration, price) => {
   try {
-    const service = await prisma.service.update({
-      where: {
-        id,
-      },
-      data: {
-        name,
-        description,
-        duration,
-        price,
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        duration: true,
-        price: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (description) updateData.description = description;
+    if (duration) updateData.duration = duration;
+    if (price) updateData.price = price;
+
+    return await prisma.service.update({
+      where: { id },
+      data: updateData,
+      select: SERVICE_SELECT_FIELDS,
     });
-    return service;
   } catch (error) {
-    console.log(error);
-    throw error;
+    logError(error);
   }
-}
+};
 
 const getServiceById = async (id) => {
   try {
-    const service = await prisma.service.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        duration: true,
-        price: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.service.findUnique({
+      where: { id },
+      select: SERVICE_SELECT_FIELDS,
     });
-    return service;
   } catch (error) {
-    console.log(error);
-    throw error;
+    logError(error);
   }
 };
 
 const getServices = async () => {
   try {
-    const services = await prisma.service.findMany({
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        duration: true,
-        price: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.service.findMany({
+      select: SERVICE_SELECT_FIELDS,
     });
-    return services;
   } catch (error) {
-    console.log(error);
-    throw error;
+    logError(error);
   }
-}
+};
 
 const deleteService = async (id) => {
   try {
-    const service = await prisma.service.delete({
-      where: {
-        id,
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        duration: true,
-        price: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    return await prisma.service.delete({
+      where: { id },
+      select: SERVICE_SELECT_FIELDS,
     });
-    return service;
   } catch (error) {
-    console.log(error);
-    throw error;
+    logError(error);
   }
-}
+};
 
 export default {
   postService,

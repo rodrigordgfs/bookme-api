@@ -4,26 +4,32 @@ import clientRepositorie from "../repositories/client.repository.js";
 import { StatusCodes } from "http-status-codes";
 import AppError from "../utils/error.js";
 
+const verifyResourceExistence = async (resourceExists, errorMessage) => {
+  if (!resourceExists) {
+    throw new AppError(errorMessage, StatusCodes.NOT_FOUND);
+  }
+};
+
+const formatDate = (dateTime) => new Date(dateTime);
+
 const postAppointment = async (
   professionalServiceId,
   clientId,
   dateTime,
   observation
 ) => {
-  const clientExists = await clientRepositorie.getClientById(clientId);
-  if (!clientExists) {
-    throw new AppError("Client not found", StatusCodes.NOT_FOUND);
-  }
+  const [clientExists, professionalServiceExists] = await Promise.all([
+    clientRepositorie.getClientById(clientId),
+    professionalRepositorie.getProfessionalServiceById(professionalServiceId),
+  ]);
 
-  const professionalServiceExists =
-    await professionalRepositorie.getProfessionalServiceById(
-      professionalServiceId
-    );
-  if (!professionalServiceExists) {
-    throw new AppError("Professional service not found", StatusCodes.NOT_FOUND);
-  }
+  await verifyResourceExistence(clientExists, "Client not found");
+  await verifyResourceExistence(
+    professionalServiceExists,
+    "Professional service not found"
+  );
 
-  const dateTimeISO = new Date(dateTime);
+  const dateTimeISO = formatDate(dateTime);
 
   const appointment = await appointmentRepositorie.postAppointment(
     professionalServiceId,
@@ -42,19 +48,18 @@ const patchAppointment = async (
   status,
   observation
 ) => {
-  const appointmentExists = await appointmentRepositorie.getAppointmentById(id);
-  if (!appointmentExists) {
-    throw new AppError("Appointment not found", StatusCodes.NOT_FOUND);
-  }
+  const [appointmentExists, professionalServiceExists] = await Promise.all([
+    appointmentRepositorie.getAppointmentById(id),
+    professionalRepositorie.getProfessionalServiceById(professionalServiceId),
+  ]);
 
-  const professionalServiceExists = await professionalRepositorie.getProfessionalServiceById(
-    professionalServiceId
+  await verifyResourceExistence(appointmentExists, "Appointment not found");
+  await verifyResourceExistence(
+    professionalServiceExists,
+    "Professional service not found"
   );
-  if (!professionalServiceExists) {
-    throw new AppError("Professional service not found", StatusCodes.NOT_FOUND);
-  }
 
-  const dateTimeISO = new Date(dateTime);
+  const dateTimeISO = formatDate(dateTime);
 
   const appointment = await appointmentRepositorie.patchAppointment(
     id,
@@ -69,25 +74,19 @@ const patchAppointment = async (
 
 const getAppointments = async () => {
   const appointments = await appointmentRepositorie.getAppointments();
-
   return appointments;
 };
 
 const getAppointmentById = async (id) => {
   const appointment = await appointmentRepositorie.getAppointmentById(id);
-
   return appointment;
 };
 
 const deleteAppointment = async (id) => {
   const appointmentExists = await appointmentRepositorie.getAppointmentById(id);
-  if (!appointmentExists) {
-    throw new AppError("Appointment not found", StatusCodes.NOT_FOUND);
-  }
+  await verifyResourceExistence(appointmentExists, "Appointment not found");
 
   await appointmentRepositorie.deleteAppointment(id);
-
-  return;
 };
 
 export default {

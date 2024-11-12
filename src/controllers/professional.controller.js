@@ -1,23 +1,25 @@
 import professionalService from "../services/professional.service.js";
 import userService from "../services/user.service.js";
 import { StatusCodes } from "http-status-codes";
-import {
-  patchProfessionalSchemaBody,
-  patchProfessionalSchemaParams,
-  getProfessionalSchemaParams,
-  deleteProfessionalSchemaParams,
-  postProfessionalServiceSchemaParams,
-  postProfessionalSchemaBody,
-  getProfessionalServiceSchemaParams,
-  deleteProfessionalServiceSchemaParams,
-} from "../schemas/index.js";
 import { z } from "zod";
 
 const postProfessional = async (request, reply) => {
   try {
-    const { id_user, specialty, photo } = postProfessionalSchemaBody.parse(
-      request.body
-    );
+    const schemaBody = z.object({
+      id_user: z.string().uuid("ID de usuário inválido"),
+      specialty: z
+        .string()
+        .min(2, "Especialidade deve ter pelo menos 2 caracteres"),
+      photo: z
+        .string()
+        .regex(
+          /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/,
+          "Formato de imagem inválido"
+        )
+        .optional(),
+    });
+
+    const { id_user, specialty, photo } = schemaBody.parse(request.body);
 
     await userService.getUserById(id_user);
 
@@ -60,10 +62,34 @@ const postProfessional = async (request, reply) => {
 
 const patchProfessional = async (request, reply) => {
   try {
-    const { id } = patchProfessionalSchemaParams.parse(request.params);
-    const { specialty, photo } = patchProfessionalSchemaBody.parse(
-      request.body
-    );
+    const schemaParams = z.object({
+      id: z.string().uuid("ID de usuário inválido"),
+    });
+
+    const schemaBody = z.object({
+      specialty: z
+        .string()
+        .min(2, "Especialidade deve ter pelo menos 2 caracteres"),
+      photo: z
+        .string()
+        .optional()
+        .refine(
+          (photo) => {
+            const urlPattern =
+              /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+            const base64Pattern =
+              /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/;
+            return urlPattern.test(photo) || base64Pattern.test(photo);
+          },
+          {
+            message:
+              "A foto deve ser uma URL ou uma string base64 válida no formato JPG ou PNG",
+          }
+        ),
+    });
+
+    const { id } = schemaParams.parse(request.params);
+    const { specialty, photo } = schemaBody.parse(request.body);
 
     const updatedProfessional = await professionalService.patchProfessional(
       id,
@@ -100,7 +126,11 @@ const patchProfessional = async (request, reply) => {
 
 const getProfessionalById = async (request, reply) => {
   try {
-    const { id } = getProfessionalSchemaParams.parse(request.params);
+    const schemaParams = z.object({
+      id: z.string().uuid("ID de usuário inválido"),
+    });
+
+    const { id } = schemaParams.parse(request.params);
 
     const professional = await professionalService.getProfessionalById(id);
 
@@ -131,15 +161,14 @@ const getProfessionalById = async (request, reply) => {
 
 const getProfessionals = async (request, reply) => {
   try {
-    const schema = z.object({
+    const schemaQuery = z.object({
       services: z
         .union([z.boolean(), z.string()])
         .optional()
         .transform((value) => value === "true" || value === true),
     });
-    const { services } = schema.parse(request.query);
-    console.log(services);
-    
+
+    const { services } = schemaQuery.parse(request.query);
 
     const professionals = await professionalService.getProfessionals(services);
 
@@ -165,7 +194,11 @@ const getProfessionals = async (request, reply) => {
 
 const deleteProfessional = async (request, reply) => {
   try {
-    const { id } = deleteProfessionalSchemaParams.parse(request.params);
+    const schemaParams = z.object({
+      id: z.string().uuid("ID de usuário inválido"),
+    });
+
+    const { id } = schemaParams.parse(request.params);
 
     await professionalService.deleteProfessional(id);
 
@@ -196,10 +229,14 @@ const deleteProfessional = async (request, reply) => {
 
 const postProfessionalService = async (request, reply) => {
   try {
-    const { id_professional, id_service } =
-      postProfessionalServiceSchemaParams.parse(request.params);
+    const schemaParams = z.object({
+      id_professional: z.string().uuid("Id do usuário deve ser um UUID"),
+      id_service: z.string().uuid("Id do serviço deve ser um UUID"),
+    });
 
-    const service =  await professionalService.postProfessionalService(
+    const { id_professional, id_service } = schemaParams.parse(request.params);
+
+    const service = await professionalService.postProfessionalService(
       id_professional,
       id_service
     );
@@ -240,9 +277,11 @@ const postProfessionalService = async (request, reply) => {
 
 const getProfessionalServices = async (request, reply) => {
   try {
-    const { id_professional } = getProfessionalServiceSchemaParams.parse(
-      request.params
-    );
+    const schemaParams = z.object({
+      id_professional: z.string().uuid("ID de usuário inválido"),
+    });
+
+    const { id_professional } = schemaParams.parse(request.params);
 
     const professionalServices =
       await professionalService.getProfessionalServices(id_professional);
@@ -275,8 +314,12 @@ const getProfessionalServices = async (request, reply) => {
 
 const deleteProfessionalService = async (request, reply) => {
   try {
-    const { id_professional, id_service } =
-      deleteProfessionalServiceSchemaParams.parse(request.params);
+    const schemaParams = z.object({
+      id_professional: z.string().uuid("ID de usuário inválido"),
+      id_service: z.string().uuid("ID de serviço inválido"),
+    });
+
+    const { id_professional, id_service } = schemaParams.parse(request.params);
 
     await professionalService.deleteProfessionalService(
       id_professional,

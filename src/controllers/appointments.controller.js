@@ -1,18 +1,24 @@
 import appointmentsService from "../services/appointments.service.js";
-import {
-  postAppointmentSchemaBody,
-  patchAppointmentSchemaBody,
-  patchAppointmentSchemaParams,
-  getAppointmentSchemaParams,
-  deleteAppointmentSchemaParams,
-} from "../schemas/index.js";
 import appointmentsRepository from "../repositories/appointments.repository.js";
 import { z } from "zod";
 
 const postAppointment = async (request, reply) => {
   try {
+    const schemaBody = z.object({
+      professionalServiceId: z.string().uuid({
+        message: "ID deve ser um UUID",
+      }),
+      clientId: z.string().uuid({
+        message: "ID deve ser um UUID",
+      }),
+      dateTime: z.string().refine((date) => !isNaN(Date.parse(date)), {
+        message: "Data inválida",
+      }),
+      observation: z.string().optional(),
+    });
+
     const { professionalServiceId, clientId, dateTime, observation } =
-      postAppointmentSchemaBody.parse(request.body);
+      schemaBody.parse(request.body);
 
     const appointment = await appointmentsService.postAppointment(
       professionalServiceId,
@@ -53,11 +59,26 @@ const postAppointment = async (request, reply) => {
 
 const patchAppointment = async (request, reply) => {
   try {
-    const { id_appointment } = patchAppointmentSchemaParams.parse(
-      request.params
-    );
+    const schemaParams = z.object({
+      id_appointment: z.string().uuid("Id do appointment deve ser um UUID"),
+    });
+
+    const schemaBody = z.object({
+      professionalServiceId: z.string().uuid({
+        message: "ID deve ser um UUID",
+      }),
+      dateTime: z.string().refine((date) => !isNaN(Date.parse(date)), {
+        message: "Data inválida",
+      }),
+      status: z.enum(["pending", "confirmed", "completed", "canceled"], {
+        message: "Status inválido",
+      }),
+      observation: z.string().optional(),
+    });
+
+    const { id_appointment } = schemaParams.parse(request.params);
     const { professionalServiceId, dateTime, observation, status } =
-      patchAppointmentSchemaBody.parse(request.body);
+      schemaBody.parse(request.body);
 
     const appointment = await appointmentsService.patchAppointment(
       id_appointment,
@@ -111,7 +132,11 @@ const getAppointments = async (request, reply) => {
 
 const getAppointmentById = async (request, reply) => {
   try {
-    const { id_appointment } = getAppointmentSchemaParams.parse(request.params);
+    const schemaParams = z.object({
+      id_appointment: z.string().uuid("Id do appointment deve ser um UUID"),
+    });
+
+    const { id_appointment } = schemaParams.parse(request.params);
 
     const appointment = await appointmentsService.getAppointmentById(
       id_appointment
@@ -134,9 +159,11 @@ const getAppointmentById = async (request, reply) => {
 
 const deleteAppointment = async (request, reply) => {
   try {
-    const { id_appointment } = deleteAppointmentSchemaParams.parse(
-      request.params
-    );
+    const schemaBody = z.object({
+      id_appointment: z.string().uuid("Id do appointment deve ser um UUID"),
+    });
+
+    const { id_appointment } = schemaBody.parse(request.params);
 
     await appointmentsRepository.getAppointmentById(id_appointment);
 

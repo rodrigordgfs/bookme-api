@@ -1,16 +1,22 @@
 import serviceService from "../services/service.service.js";
 import { StatusCodes } from "http-status-codes";
-import {
-  postServiceSchemaBody,
-  patchServiceSchemaBody,
-  patchServiceSchemaParams,
-  deleteServiceSchemaParams,
-} from "../schemas/index.js";
 import { z } from "zod";
 
 const postService = async (request, reply) => {
   try {
-    const { name, description, duration, price } = postServiceSchemaBody.parse(
+    const schemaBody = z.object({
+      name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+      description: z
+        .string()
+        .min(2, "Descrição deve ter pelo menos 2 caracteres"),
+      duration: z
+        .number()
+        .int()
+        .positive("Duração deve ser um número positivo"),
+      price: z.number().int().positive("Preço deve ser um número positivo"),
+    });
+
+    const { name, description, duration, price } = schemaBody.parse(
       request.body
     );
 
@@ -43,8 +49,24 @@ const postService = async (request, reply) => {
 
 const patchService = async (request, reply) => {
   try {
-    const { id } = patchServiceSchemaParams.parse(request.params);
-    const { name, description, duration, price } = patchServiceSchemaBody.parse(
+    const schemaParams = z.object({
+      id: z.string().uuid("ID deve ser um UUID"),
+    });
+
+    const schemaBody = z.object({
+      name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+      description: z
+        .string()
+        .min(2, "Descrição deve ter pelo menos 2 caracteres"),
+      duration: z
+        .number()
+        .int()
+        .positive("Duração deve ser um número positivo"),
+      price: z.number().int().positive("Preço deve ser um número positivo"),
+    });
+
+    const { id } = schemaParams.parse(request.params);
+    const { name, description, duration, price } = schemaBody.parse(
       request.body
     );
 
@@ -84,7 +106,10 @@ const patchService = async (request, reply) => {
 
 const getServiceById = async (request, reply) => {
   try {
-    const { id } = patchServiceSchemaParams.parse(request.params);
+    const schemaParams = z.object({
+      id: z.string().uuid("ID deve ser um UUID"),
+    });
+    const { id } = schemaParams.parse(request.params);
 
     const service = await serviceService.getServiceById(id);
 
@@ -129,7 +154,11 @@ const getServices = async (request, reply) => {
 
 const deleteService = async (request, reply) => {
   try {
-    const { id } = deleteServiceSchemaParams.parse(request.params);
+    const schemaParams = z.object({
+      id: z.string().uuid("ID deve ser um UUID"),
+    });
+
+    const { id } = schemaParams.parse(request.params);
 
     await serviceService.deleteService(id);
 

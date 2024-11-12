@@ -1,18 +1,34 @@
 import clientService from "../services/client.service.js";
 import userService from "../services/user.service.js";
 import { StatusCodes } from "http-status-codes";
-import {
-  postClientSchemaBody,
-  patchClientSchemaBody,
-  getClientSchemaParams,
-  deleteClientSchemaParams,
-} from "../schemas/index.js";
 import { z } from "zod";
 
 const postClient = async (request, reply) => {
   try {
-    const { id_user, phone, birthDate, gender, photo } =
-      postClientSchemaBody.parse(request.body);
+    const schemaBody = z.object({
+      id_user: z.string().uuid("ID de usuário inválido"),
+      phone: z
+        .string()
+        .min(10, "Telefone inválido")
+        .max(11, "Telefone inválido"),
+      birthDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+        message: "Data de nascimento inválida",
+      }),
+      gender: z.string().refine((g) => g === "M" || g === "F" || g === "O", {
+        message: "Gênero inválido",
+      }),
+      photo: z
+        .string()
+        .regex(
+          /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/,
+          "Formato de imagem inválido"
+        )
+        .optional(),
+    });
+
+    const { id_user, phone, birthDate, gender, photo } = schemaBody.parse(
+      request.body
+    );
 
     await userService.getUserById(id_user);
 
@@ -56,10 +72,41 @@ const postClient = async (request, reply) => {
 
 const patchClient = async (request, reply) => {
   try {
-    const { id } = getClientSchemaParams.parse(request.params);
-    const { phone, birthDate, gender, photo } = patchClientSchemaBody.parse(
-      request.body
-    );
+    const schemaParams = z.object({
+      id: z.string().uuid("ID de usuário inválido"),
+    });
+
+    const schemaBody = z.object({
+      phone: z
+        .string()
+        .min(10, "Telefone inválido")
+        .max(11, "Telefone inválido"),
+      birthDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+        message: "Data de nascimento inválida",
+      }),
+      gender: z.string().refine((g) => g === "M" || g === "F" || g === "O", {
+        message: "Gênero inválido",
+      }),
+      photo: z
+        .string()
+        .optional()
+        .refine(
+          (photo) => {
+            const urlPattern =
+              /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+            const base64Pattern =
+              /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/;
+            return urlPattern.test(photo) || base64Pattern.test(photo);
+          },
+          {
+            message:
+              "A foto deve ser uma URL ou uma string base64 válida no formato JPG ou PNG",
+          }
+        ),
+    });
+
+    const { id } = schemaParams.parse(request.params);
+    const { phone, birthDate, gender, photo } = schemaBody.parse(request.body);
 
     await clientService.getClientById(id);
 
@@ -113,7 +160,11 @@ const getClients = async (request, reply) => {
 
 const getClientById = async (request, reply) => {
   try {
-    const { id } = getClientSchemaParams.parse(request.params);
+    const schemaParams = z.object({
+      id: z.string().uuid("ID de usuário inválido"),
+    });
+
+    const { id } = schemaParams.parse(request.params);
 
     const client = await clientService.getClientById(id);
 
@@ -145,7 +196,11 @@ const getClientById = async (request, reply) => {
 
 const deleteClient = async (request, reply) => {
   try {
-    const { id } = deleteClientSchemaParams.parse(request.params);
+    const schemaParams = z.object({
+      id: z.string().uuid("ID de usuário inválido"),
+    });
+
+    const { id } = schemaParams.parse(request.params);
 
     await clientService.getClientById(id);
 

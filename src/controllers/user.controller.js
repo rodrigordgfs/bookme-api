@@ -1,11 +1,16 @@
 import userService from "../services/user.service.js";
 import { StatusCodes } from "http-status-codes";
-import { registerSchemaBody, loginSchemaBody, patchSchemaBody } from "../schemas/index.js";
 import { z } from "zod";
 
 const register = async (request, reply) => {
   try {
-    const body = registerSchemaBody.parse(request.body);
+    const schemaBody = z.object({
+      name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+      email: z.string().email("E-mail inválido"),
+      password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+    });
+
+    const body = schemaBody.parse(request.body);
 
     const user = await userService.register(
       body.name,
@@ -40,7 +45,12 @@ const register = async (request, reply) => {
 
 const login = async (request, reply) => {
   try {
-    const body = loginSchemaBody.parse(request.body);
+    const schemaBody = z.object({
+      email: z.string().email("E-mail inválido"),
+      password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+    });
+
+    const body = schemaBody.parse(request.body);
 
     const user = await userService.login(body.email, body.password);
 
@@ -71,7 +81,11 @@ const login = async (request, reply) => {
 
 const getUserById = async (request, reply) => {
   try {
-    const id = request.params.id;
+    const schemaParams = z.object({
+      id: z.string().uuid("ID deve ser um UUID"),
+    });
+
+    const { id } = schemaParams.parse(request.params);
 
     const user = await userService.getUserById(id);
 
@@ -99,18 +113,22 @@ const getUsers = async (request, reply) => {
       error: "Ocorreu um erro ao buscar os usuários",
     });
   }
-}
+};
 
 const patchUser = async (request, reply) => {
   try {
-    const id = request.params.id;
-    const body = patchSchemaBody.parse(request.body);
+    const schemaParams = z.object({
+      id: z.string().uuid("ID deve ser um UUID"),
+    });
 
-    const user = await userService.patchUser(
-      id,
-      body.name,
-      body.email
-    );
+    const schemaBody = z.object({
+      name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+    });
+
+    const { id } = schemaParams.parse(request.params);
+    const { name, email } = schemaBody.parse(request.body);
+
+    const user = await userService.patchUser(id, name, email);
 
     reply.send(user);
   } catch (error) {
@@ -139,7 +157,11 @@ const patchUser = async (request, reply) => {
 
 const deleteUser = async (request, reply) => {
   try {
-    const id = request.params.id;
+    const schemaParams = z.object({
+      id: z.string().uuid("ID deve ser um UUID"),
+    });
+
+    const { id } = schemaParams.parse(request.params);
 
     await userService.deleteUser(id);
 
@@ -163,5 +185,5 @@ export default {
   getUserById,
   patchUser,
   deleteUser,
-  getUsers
+  getUsers,
 };

@@ -98,6 +98,7 @@ const getProfessionals = async (
       where: conditions.length > 0 ? { OR: conditions } : undefined,
       skip,
       take: perPage,
+      cacheStrategy: { ttl: 60 }
     });
 
     return {
@@ -214,6 +215,7 @@ const getProfessionalServiceByIdProfessional = async (professionalId) => {
         createdAt: true,
         updatedAt: true,
       },
+      cacheStrategy: { ttl: 60 }
     });
   } catch (error) {
     handleError(error);

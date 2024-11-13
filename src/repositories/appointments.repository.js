@@ -106,6 +106,7 @@ const getAppointments = async (start_date, end_date, status) => {
     return await prisma.appointment.findMany({
       select: appointmentSelectFields,
       where: Object.keys(where).length > 0 ? where : undefined,
+      cacheStrategy: { ttl: 60 }
     });
   } catch (error) {
     console.error("Erro ao listar agendamentos:", error);

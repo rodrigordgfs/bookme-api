@@ -74,6 +74,7 @@ const getClients = async (name, email, phone, page, perPage) => {
       where: conditions.length > 0 ? { OR: conditions } : undefined,
       skip,
       take: perPage,
+      cacheStrategy: { ttl: 60 }
     });
 
     return {

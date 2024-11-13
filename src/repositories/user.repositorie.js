@@ -40,6 +40,7 @@ const getUsers = async () => {
   try {
     const users = await prisma.user.findMany({
       select: { id: true, name: true, email: true },
+      cacheStrategy: { ttl: 60 }
     });
     return users;
   } catch (error) {

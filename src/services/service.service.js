@@ -34,8 +34,8 @@ const getServiceById = async (id) => {
   return await checkServiceExists(id);
 };
 
-const getServices = async () => {
-  return await serviceRepositorie.getServices();
+const getServices = async (name, price, duration) => {
+  return await serviceRepositorie.getServices(name, price, duration);
 };
 
 const deleteService = async (id) => {

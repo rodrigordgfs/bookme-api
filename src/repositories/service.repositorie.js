@@ -55,10 +55,17 @@ const getServiceById = async (id) => {
   }
 };
 
-const getServices = async () => {
+const getServices = async (name, price, duration) => {
   try {
+    const conditions = [
+      name ? { name: { contains: name, mode: "insensitive" } } : undefined,
+      price ? { price: price } : undefined,
+      duration ? { duration: duration } : undefined,
+    ].filter(Boolean);
+
     return await prisma.service.findMany({
       select: SERVICE_SELECT_FIELDS,
+      where: conditions.length > 0 ? { OR: conditions } : undefined,
     });
   } catch (error) {
     logError(error);

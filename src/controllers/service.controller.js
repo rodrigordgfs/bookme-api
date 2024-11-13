@@ -91,9 +91,17 @@ const getServiceById = async (request, reply) => {
   }
 };
 
-const getServices = async (_, reply) => {
+const getServices = async (request, reply) => {
   try {
-    const services = await serviceService.getServices();
+    const schemaQuery = z.object({
+      name: z.string().optional(),
+      price: z.string().optional().transform((value) => parseFloat(value)),
+      duration: z.string().optional().transform((value) => parseFloat(value)),
+    });
+
+    const { name, price, duration } = schemaQuery.parse(request.query);
+
+    const services = await serviceService.getServices(name, price, duration);
     reply.send(services);
   } catch (error) {
     console.error(error);

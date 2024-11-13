@@ -272,6 +272,5 @@ export default {
   getProfessionalServiceByIdProfessional,
   postProfessionalService,
   deleteProfessionalService,
-  getProfessionalServiceById,
-  uploadProfessionalImage,
+  getProfessionalServiceById
 };

@@ -124,6 +124,5 @@ export default {
   getClients,
   getClientById,
   getClientByUserId,
-  deleteClient,
-  uploadClientImage,
+  deleteClient
 };

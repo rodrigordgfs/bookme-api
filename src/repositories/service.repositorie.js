@@ -75,8 +75,7 @@ const getServices = async (name, price, duration, page = 1, perPage = 10) => {
       select: SERVICE_SELECT_FIELDS,
       where: conditions.length > 0 ? { OR: conditions } : undefined,
       skip,
-      take: perPage,
-      cacheStrategy: { ttl: 60 }
+      take: perPage
     });
 
     return {

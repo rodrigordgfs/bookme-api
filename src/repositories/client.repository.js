@@ -73,8 +73,7 @@ const getClients = async (name, email, phone, page, perPage) => {
       select: clientSelectFields,
       where: conditions.length > 0 ? { OR: conditions } : undefined,
       skip,
-      take: perPage,
-      cacheStrategy: { ttl: 60 }
+      take: perPage
     });
 
     return {

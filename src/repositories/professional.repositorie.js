@@ -1,5 +1,4 @@
 import { prisma } from "../libs/prisma.js";
-import { supabase } from "../libs/supabase.js";
 
 const baseProfessionalSelect = {
   id: true,

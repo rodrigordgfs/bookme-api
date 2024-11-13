@@ -126,18 +126,39 @@ const getProfessionals = async (request, reply) => {
         .union([z.boolean(), z.string()])
         .optional()
         .transform((val) => val === "true" || val === true),
+      page: z
+        .string()
+        .optional()
+        .default("1")
+        .transform((value) => parseInt(value)),
+      perPage: z
+        .string()
+        .optional()
+        .default("10")
+        .transform((value) => parseInt(value)),
     });
 
-    const { services, name, email, specialty } = schemaQuery.parse(
-      request.query
-    );
-    const professionals = await professionalService.getProfessionals(
-      services,
-      name,
-      email,
-      specialty
-    );
-    reply.send(professionals);
+    const { services, name, email, specialty, page, perPage } =
+      schemaQuery.parse(request.query);
+
+    const { profissionals, totalPages, currentPage, totalItems } =
+      await professionalService.getProfessionals(
+        services,
+        name,
+        email,
+        specialty,
+        page,
+        perPage
+      );
+
+    reply
+      .status(StatusCodes.OK)
+      .headers({
+        "X-Total-Pages": totalPages,
+        "X-Current-Page": currentPage,
+        "X-Total-Items": totalItems,
+      })
+      .send(profissionals);
   } catch (error) {
     handleError(error, reply);
   }

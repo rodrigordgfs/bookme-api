@@ -41,46 +41,42 @@ const postProfessional = async (id_user, specialty, photo) => {
     id_user,
     specialty
   );
-  const photoUrl =
-    photo && isBase64(photo)
-      ? await professionalRepositorie.uploadProfissionalImage(
-          professional.id,
-          photo
-        )
-      : null;
 
-  return {
-    ...professional,
-    photoUrl,
-  };
+  return professional
 };
 
 const patchProfessional = async (id, specialty, photo) => {
-  const professional = await findProfessionalById(id);
+   await findProfessionalById(id);
 
-  let newPhoto = null;
-  if (photo && isBase64(photo)) {
-    newPhoto = await professionalRepositorie.updatedProfessional(
-      professional.id,
-      photo
-    );
-  }
-
-  const updatedProfessional = await professionalRepositorie.patchProfessional(
+  const profissional = await professionalRepositorie.patchProfessional(
     id,
     specialty,
-    newPhoto ? newPhoto : professional.photoUrl
+    photo
   );
 
-  return updatedProfessional;
+  return profissional;
 };
 
 const getProfessionalById = async (id) => {
   return await findProfessionalById(id);
 };
 
-const getProfessionals = async (services, name, email, specialty) => {
-  return await professionalRepositorie.getProfessionals(services, name, email, specialty);
+const getProfessionals = async (
+  services,
+  name,
+  email,
+  specialty,
+  page,
+  perPage
+) => {
+  return await professionalRepositorie.getProfessionals(
+    services,
+    name,
+    email,
+    specialty,
+    page,
+    perPage
+  );
 };
 
 const deleteProfessional = async (id) => {

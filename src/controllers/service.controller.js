@@ -95,14 +95,41 @@ const getServices = async (request, reply) => {
   try {
     const schemaQuery = z.object({
       name: z.string().optional(),
-      price: z.string().optional().transform((value) => parseFloat(value)),
-      duration: z.string().optional().transform((value) => parseFloat(value)),
+      price: z
+        .string()
+        .optional()
+        .transform((value) => parseFloat(value)),
+      duration: z
+        .string()
+        .optional()
+        .transform((value) => parseFloat(value)),
+      page: z
+        .string()
+        .optional()
+        .default("1")
+        .transform((value) => parseInt(value)),
+      perPage: z
+        .string()
+        .optional()
+        .default("10")
+        .transform((value) => parseInt(value)),
     });
 
-    const { name, price, duration } = schemaQuery.parse(request.query);
+    const { name, price, duration, page, perPage } = schemaQuery.parse(
+      request.query
+    );
 
-    const services = await serviceService.getServices(name, price, duration);
-    reply.send(services);
+    const { services, totalPages, currentPage, totalItems } =
+      await serviceService.getServices(name, price, duration, page, perPage);
+
+    reply
+      .status(StatusCodes.OK)
+      .headers({
+        "X-Total-Pages": totalPages,
+        "X-Current-Page": currentPage,
+        "X-Total-Items": totalItems,
+      })
+      .send(services);
   } catch (error) {
     console.error(error);
     reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({

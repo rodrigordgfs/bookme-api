@@ -55,7 +55,7 @@ const getServiceById = async (id) => {
   }
 };
 
-const getServices = async (name, price, duration) => {
+const getServices = async (name, price, duration, page = 1, perPage = 10) => {
   try {
     const conditions = [
       name ? { name: { contains: name, mode: "insensitive" } } : undefined,
@@ -63,10 +63,27 @@ const getServices = async (name, price, duration) => {
       duration ? { duration: duration } : undefined,
     ].filter(Boolean);
 
-    return await prisma.service.findMany({
-      select: SERVICE_SELECT_FIELDS,
+    const skip = (Math.max(page, 1) - 1) * Math.max(perPage, 1);
+
+    const totalItems = await prisma.professional.count({
       where: conditions.length > 0 ? { OR: conditions } : undefined,
     });
+
+    const totalPages = Math.ceil(totalItems / perPage);
+
+    const services = await prisma.service.findMany({
+      select: SERVICE_SELECT_FIELDS,
+      where: conditions.length > 0 ? { OR: conditions } : undefined,
+      skip,
+      take: perPage,
+    });
+
+    return {
+      services,
+      totalPages,
+      currentPage: page,
+      totalItems,
+    };
   } catch (error) {
     logError(error);
   }

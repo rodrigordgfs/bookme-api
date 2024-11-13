@@ -112,14 +112,33 @@ const getClients = async (request, reply) => {
       name: z.string().optional(),
       email: z.string().email().optional(),
       phone: z.string().optional(),
+      page: z
+        .string()
+        .optional()
+        .default("1")
+        .transform((value) => parseInt(value)),
+      perPage: z
+        .string()
+        .optional()
+        .default("10")
+        .transform((value) => parseInt(value)),
     });
 
-    const { name, email, phone } = schemaQuery.parse(request.query);
+    const { name, email, phone, page, perPage } = schemaQuery.parse(
+      request.query
+    );
 
-    console.log(name, email, phone);
+    const { clients, totalPages, currentPage, totalItems } =
+      await clientService.getClients(name, email, phone, page, perPage);
 
-    const clients = await clientService.getClients(name, email, phone);
-    reply.status(StatusCodes.OK).send(clients);
+    reply
+      .status(StatusCodes.OK)
+      .headers({
+        "X-Total-Pages": totalPages,
+        "X-Current-Page": currentPage,
+        "X-Total-Items": totalItems,
+      })
+      .send(clients);
   } catch (error) {
     handleErrorResponse(error, reply);
   }

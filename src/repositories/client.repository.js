@@ -1,5 +1,4 @@
 import { prisma } from "../libs/prisma.js";
-import { supabase } from "../libs/supabase.js";
 
 const clientSelectFields = {
   id: true,
@@ -13,7 +12,7 @@ const clientSelectFields = {
   phone: true,
   birthDate: true,
   gender: true,
-  photoUrl: true,
+  photo: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -23,7 +22,7 @@ const handleError = (error, message) => {
   throw error;
 };
 
-const postClient = async (id_user, phone, birthDate, gender) => {
+const postClient = async (id_user, phone, birthDate, gender, photo) => {
   try {
     return await prisma.client.create({
       data: {
@@ -31,6 +30,7 @@ const postClient = async (id_user, phone, birthDate, gender) => {
         phone,
         birthDate,
         gender,
+        photo,
       },
       select: clientSelectFields,
     });
@@ -39,11 +39,11 @@ const postClient = async (id_user, phone, birthDate, gender) => {
   }
 };
 
-const patchClient = async (id, phone, birthDate, gender, photoUrl) => {
+const patchClient = async (id, phone, birthDate, gender, photo) => {
   try {
     return await prisma.client.update({
       where: { id },
-      data: { phone, birthDate, gender, photoUrl },
+      data: { phone, birthDate, gender, photo },
       select: clientSelectFields,
     });
   } catch (error) {
@@ -51,23 +51,41 @@ const patchClient = async (id, phone, birthDate, gender, photoUrl) => {
   }
 };
 
-const getClients = async (name, email, phone) => {
+const getClients = async (name, email, phone, page, perPage) => {
   try {
     const conditions = [
-      name ? { user: { name: { contains: name, mode: "insensitive" } } } : undefined,
+      name
+        ? { user: { name: { contains: name, mode: "insensitive" } } }
+        : undefined,
       email ? { email: { contains: email, mode: "insensitive" } } : undefined,
       phone ? { phone: { contains: phone, mode: "insensitive" } } : undefined,
     ].filter(Boolean);
 
-    return await prisma.client.findMany({
-      select: clientSelectFields,
+    const skip = (Math.max(page, 1) - 1) * Math.max(perPage, 1);
+
+    const totalItems = await prisma.client.count({
       where: conditions.length > 0 ? { OR: conditions } : undefined,
     });
+
+    const totalPages = Math.ceil(totalItems / perPage);
+
+    const clients = await prisma.client.findMany({
+      select: clientSelectFields,
+      where: conditions.length > 0 ? { OR: conditions } : undefined,
+      skip,
+      take: perPage,
+    });
+
+    return {
+      clients,
+      totalPages,
+      currentPage: page,
+      totalItems,
+    };
   } catch (error) {
     handleError(error, "Erro ao obter lista de clientes");
   }
 };
-
 
 
 const getClientById = async (id) => {
@@ -97,66 +115,6 @@ const deleteClient = async (id) => {
     return await prisma.client.delete({ where: { id } });
   } catch (error) {
     handleError(error, "Erro ao deletar cliente");
-  }
-};
-
-const uploadClientImage = async (id_client, photoBase64) => {
-  try {
-    const { extension, buffer } = processImageBase64(photoBase64, id_client);
-    const fileName = `client/${id_client}.${extension}`;
-
-    await deleteExistingFile(fileName);
-
-    const { data, error } = await supabase.storage
-      .from("clients")
-      .upload(fileName, buffer, {
-        contentType: `image/${extension}`,
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    if (error) throw new Error("Erro ao fazer upload da imagem");
-
-    const newPhotoUrl = supabase.storage.from("clients").getPublicUrl(fileName)
-      .data.publicUrl;
-
-    await prisma.client.update({
-      where: { id: id_client },
-      data: { photoUrl: newPhotoUrl },
-    });
-
-    console.log("URL da imagem:", newPhotoUrl);
-    return newPhotoUrl;
-  } catch (error) {
-    handleError(error, "Erro ao fazer upload da imagem do cliente");
-  }
-};
-
-const processImageBase64 = (photoBase64, id_client) => {
-  const match = photoBase64.match(/^data:image\/(\w+);base64,/);
-  const extension = match ? match[1] : "jpeg";
-  const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
-  const buffer = Buffer.from(base64Data, "base64");
-
-  return { extension, buffer };
-};
-
-const deleteExistingFile = async (fileName) => {
-  const { data: existingFile, error: getError } = await supabase.storage
-    .from("clients")
-    .list("client", { search: fileName });
-
-  if (getError) {
-    throw new Error("Erro ao buscar arquivo existente");
-  }
-
-  if (existingFile && existingFile.length > 0) {
-    const { error: deleteError } = await supabase.storage
-      .from("clients")
-      .remove([fileName]);
-    if (deleteError) {
-      throw new Error("Erro ao excluir arquivo existente");
-    }
   }
 };
 

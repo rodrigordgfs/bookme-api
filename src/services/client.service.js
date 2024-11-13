@@ -27,18 +27,11 @@ const postClient = async (id_user, phone, birthDate, gender, photo) => {
     id_user,
     phone,
     birthDateISO,
-    gender
+    gender,
+    photo
   );
 
-  let photoUrl = null;
-  if (photo && isBase64(photo)) {
-    photoUrl = await clientRepository.uploadClientImage(client.id, photo);
-  }
-
-  return {
-    ...client,
-    photoUrl,
-  };
+  return client
 };
 
 const patchClient = async (id, phone, birthDate, gender, photo) => {
@@ -47,24 +40,25 @@ const patchClient = async (id, phone, birthDate, gender, photo) => {
 
   const birthDateISO = new Date(birthDate);
 
-  let newPhoto = null;
-  if (photo && isBase64(photo)) {
-    newPhoto = await clientRepository.uploadClientImage(clientExists.id, photo);
-  }
-
-  const updatedClient = await clientRepository.patchClient(
+  const client = await clientRepository.patchClient(
     id,
     phone,
     birthDateISO,
     gender,
-    newPhoto
+    photo
   );
 
-  return updatedClient;
+  return client;
 };
 
-const getClients = async (name, email, phone) => {
-  const clients = await clientRepository.getClients(name, email, phone);
+const getClients = async (name, email, phone, page, perPage) => {
+  const clients = await clientRepository.getClients(
+    name,
+    email,
+    phone,
+    page,
+    perPage
+  );
   return clients;
 };
 

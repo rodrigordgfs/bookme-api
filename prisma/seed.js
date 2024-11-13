@@ -1,38 +1,38 @@
-import { PrismaClient } from '@prisma/client'
-import { addDays } from 'date-fns'
+import { PrismaClient } from "@prisma/client";
+import { addDays } from "date-fns";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Cria 10 usuários
+  // Cria 30 usuários com e-mails únicos
   const users = await Promise.all(
-    Array.from({ length: 10 }, (_, i) =>
+    Array.from({ length: 30 }, (_, i) =>
       prisma.user.create({
         data: {
           name: `User ${i + 1}`,
-          email: `user${i + 1}@example.com`,
+          email: `user${i + 1}@example.com`, // Assegura que cada e-mail é único
           password: "password123",
         },
       })
     )
   );
 
-  // Cria 5 profissionais associados aos usuários criados
+  // Cria 5 profissionais associados aos primeiros usuários criados
   const professionals = await Promise.all(
     users.slice(0, 5).map((user, i) =>
       prisma.professional.create({
         data: {
           userId: user.id,
           specialty: `Specialty ${i + 1}`,
-          photoUrl: 'https://placehold.co/400x400/png'
+          photo: 'https://placehold.co/400x400/png'
         },
       })
     )
   );
 
-  // Cria 10 serviços
+  // Cria 30 serviços
   const services = await Promise.all(
-    Array.from({ length: 10 }, (_, i) =>
+    Array.from({ length: 30 }, (_, i) =>
       prisma.service.create({
         data: {
           name: `Service ${i + 1}`,
@@ -58,16 +58,16 @@ async function main() {
     )
   );
 
-  // Cria 5 clientes (usando os usuários restantes)
+  // Cria 5 clientes usando os usuários restantes
   const clients = await Promise.all(
     users.slice(5).map((user, i) =>
       prisma.client.create({
         data: {
           userId: user.id,
           phone: `12345678${i}`,
-          birthDate: new Date(`199${i + 1}-01-01`),
-          gender: i % 2 === 0 ? "Female" : "Male",
-          photoUrl: 'https://placehold.co/400x400/png'
+          birthDate: new Date(`1997-01-01`),
+          gender: i % 2 === 0 ? "F" : "M",
+          photo: 'https://placehold.co/400x400/png'
         },
       })
     )

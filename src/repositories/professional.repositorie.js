@@ -10,7 +10,7 @@ const baseProfessionalSelect = {
       email: true,
     },
   },
-  photoUrl: true,
+  photo: true,
   specialty: true,
   createdAt: true,
   updatedAt: true,
@@ -21,7 +21,7 @@ const handleError = (error) => {
   throw error;
 };
 
-const postProfessional = async (user_id, specialty, photoUrl) => {
+const postProfessional = async (user_id, specialty, photo) => {
   try {
     return await prisma.professional.create({
       data: {
@@ -29,7 +29,7 @@ const postProfessional = async (user_id, specialty, photoUrl) => {
           connect: { id: user_id },
         },
         specialty,
-        photoUrl,
+        photo,
       },
       select: baseProfessionalSelect,
     });
@@ -49,15 +49,34 @@ const getProfessionalById = async (id) => {
   }
 };
 
-const getProfessionals = async (service, name, email, specialty) => {
+const getProfessionals = async (
+  service,
+  name,
+  email,
+  specialty,
+  page = 1,
+  perPage = 10
+) => {
   try {
     const conditions = [
-      name ? { user: { name: { contains: name, mode: "insensitive" } } } : undefined,
+      name
+        ? { user: { name: { contains: name, mode: "insensitive" } } }
+        : undefined,
       email ? { email: { contains: email, mode: "insensitive" } } : undefined,
-      specialty ? { specialty: { contains: specialty, mode: "insensitive" } } : undefined,
+      specialty
+        ? { specialty: { contains: specialty, mode: "insensitive" } }
+        : undefined,
     ].filter(Boolean);
 
-    return await prisma.professional.findMany({
+    const skip = (Math.max(page, 1) - 1) * Math.max(perPage, 1);
+
+    const totalItems = await prisma.professional.count({
+      where: conditions.length > 0 ? { OR: conditions } : undefined,
+    });
+
+    const totalPages = Math.ceil(totalItems / perPage);
+
+    const profissionals = await prisma.professional.findMany({
       select: {
         ...baseProfessionalSelect,
         ...(service && {
@@ -78,7 +97,16 @@ const getProfessionals = async (service, name, email, specialty) => {
         }),
       },
       where: conditions.length > 0 ? { OR: conditions } : undefined,
+      skip,
+      take: perPage,
     });
+
+    return {
+      profissionals,
+      totalPages,
+      currentPage: page,
+      totalItems,
+    };
   } catch (error) {
     handleError(error);
   }
@@ -95,11 +123,11 @@ const getProfessionalByUserId = async (userId) => {
   }
 };
 
-const patchProfessional = async (id, specialty, photoUrl) => {
+const patchProfessional = async (id, specialty, photo) => {
   try {
     return await prisma.professional.update({
       where: { id },
-      data: { specialty, photoUrl },
+      data: { specialty, photo },
       select: baseProfessionalSelect,
     });
   } catch (error) {
@@ -233,44 +261,6 @@ const deleteProfessionalService = async (professionalId, serviceId) => {
   }
 };
 
-const uploadProfessionalImage = async (professionalId, photoBase64) => {
-  try {
-    const extension =
-      photoBase64.match(/^data:image\/(\w+);base64,/)?.[1] || "jpeg";
-    const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
-    const buffer = Buffer.from(base64Data, "base64");
-    const fileName = `professional/${professionalId}.${extension}`;
-
-    const { data: existingFile } = await supabase.storage
-      .from("professionals")
-      .list("professional", { search: `${professionalId}.${extension}` });
-    if (existingFile?.length) {
-      await supabase.storage.from("professionals").remove([fileName]);
-    }
-
-    const { data, error } = await supabase.storage
-      .from("professionals")
-      .upload(fileName, buffer, {
-        contentType: `image/${extension}`,
-        cacheControl: "3600",
-        upsert: false,
-      });
-    if (error) throw error;
-
-    const newPhotoUrl = supabase.storage
-      .from("professionals")
-      .getPublicUrl(fileName).data.publicUrl;
-
-    await prisma.professional.update({
-      where: { id: professionalId },
-      data: { photoUrl: newPhotoUrl },
-    });
-
-    return newPhotoUrl;
-  } catch (error) {
-    handleError(error);
-  }
-};
 
 export default {
   postProfessional,

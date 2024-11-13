@@ -33,6 +33,7 @@ const urlOrBase64Schema = z
   );
 
 const handleError = (error, reply) => {
+  console.log(error);
   if (error instanceof z.ZodError) {
     return reply.code(StatusCodes.BAD_REQUEST).send({
       error: error.errors.map((e) => ({
@@ -118,14 +119,24 @@ const getProfessionalById = async (request, reply) => {
 const getProfessionals = async (request, reply) => {
   try {
     const schemaQuery = z.object({
+      name: z.string().optional(),
+      email: z.string().email().optional(),
+      specialty: z.string().optional(),
       services: z
         .union([z.boolean(), z.string()])
         .optional()
         .transform((val) => val === "true" || val === true),
     });
 
-    const { services } = schemaQuery.parse(request.query);
-    const professionals = await professionalService.getProfessionals(services);
+    const { services, name, email, specialty } = schemaQuery.parse(
+      request.query
+    );
+    const professionals = await professionalService.getProfessionals(
+      services,
+      name,
+      email,
+      specialty
+    );
     reply.send(professionals);
   } catch (error) {
     handleError(error, reply);

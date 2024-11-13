@@ -79,8 +79,8 @@ const getProfessionalById = async (id) => {
   return await findProfessionalById(id);
 };
 
-const getProfessionals = async (services) => {
-  return await professionalRepositorie.getProfessionals(services);
+const getProfessionals = async (services, name, email, specialty) => {
+  return await professionalRepositorie.getProfessionals(services, name, email, specialty);
 };
 
 const deleteProfessional = async (id) => {

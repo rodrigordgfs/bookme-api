@@ -49,8 +49,14 @@ const getProfessionalById = async (id) => {
   }
 };
 
-const getProfessionals = async (service) => {
+const getProfessionals = async (service, name, email, specialty) => {
   try {
+    const conditions = [
+      name ? { user: { name: { contains: name, mode: "insensitive" } } } : undefined,
+      email ? { email: { contains: email, mode: "insensitive" } } : undefined,
+      specialty ? { specialty: { contains: specialty, mode: "insensitive" } } : undefined,
+    ].filter(Boolean);
+
     return await prisma.professional.findMany({
       select: {
         ...baseProfessionalSelect,
@@ -71,6 +77,7 @@ const getProfessionals = async (service) => {
           },
         }),
       },
+      where: conditions.length > 0 ? { OR: conditions } : undefined,
     });
   } catch (error) {
     handleError(error);

@@ -108,7 +108,17 @@ const patchClient = async (request, reply) => {
 
 const getClients = async (request, reply) => {
   try {
-    const clients = await clientService.getClients();
+    const schemaQuery = z.object({
+      name: z.string().optional(),
+      email: z.string().email().optional(),
+      phone: z.string().optional(),
+    });
+
+    const { name, email, phone } = schemaQuery.parse(request.query);
+
+    console.log(name, email, phone);
+
+    const clients = await clientService.getClients(name, email, phone);
     reply.status(StatusCodes.OK).send(clients);
   } catch (error) {
     handleErrorResponse(error, reply);

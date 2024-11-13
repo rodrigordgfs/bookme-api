@@ -63,8 +63,8 @@ const patchClient = async (id, phone, birthDate, gender, photo) => {
   return updatedClient;
 };
 
-const getClients = async () => {
-  const clients = await clientRepository.getClients();
+const getClients = async (name, email, phone) => {
+  const clients = await clientRepository.getClients(name, email, phone);
   return clients;
 };
 

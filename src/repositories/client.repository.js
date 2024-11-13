@@ -51,13 +51,24 @@ const patchClient = async (id, phone, birthDate, gender, photoUrl) => {
   }
 };
 
-const getClients = async () => {
+const getClients = async (name, email, phone) => {
   try {
-    return await prisma.client.findMany({ select: clientSelectFields });
+    const conditions = [
+      name ? { user: { name: { contains: name, mode: "insensitive" } } } : undefined,
+      email ? { email: { contains: email, mode: "insensitive" } } : undefined,
+      phone ? { phone: { contains: phone, mode: "insensitive" } } : undefined,
+    ].filter(Boolean);
+
+    return await prisma.client.findMany({
+      select: clientSelectFields,
+      where: conditions.length > 0 ? { OR: conditions } : undefined,
+    });
   } catch (error) {
     handleError(error, "Erro ao obter lista de clientes");
   }
 };
+
+
 
 const getClientById = async (id) => {
   try {

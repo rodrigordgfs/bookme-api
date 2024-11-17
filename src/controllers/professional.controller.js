@@ -153,12 +153,12 @@ const getProfessionals = async (request, reply) => {
 
     reply
       .status(StatusCodes.OK)
-      .headers({
-        "X-Total-Pages": totalPages,
-        "X-Current-Page": currentPage,
-        "X-Total-Items": totalItems,
-      })
-      .send(profissionals);
+      .send({
+        totalPages,
+        currentPage,
+        totalItems,
+        data: profissionals,
+      });
   } catch (error) {
     handleError(error, reply);
   }

@@ -124,12 +124,12 @@ const getServices = async (request, reply) => {
 
     reply
       .status(StatusCodes.OK)
-      .headers({
-        "X-Total-Pages": totalPages,
-        "X-Current-Page": currentPage,
-        "X-Total-Items": totalItems,
-      })
-      .send(services);
+      .send({
+        totalPages,
+        currentPage,
+        totalItems,
+        data: services
+      });
   } catch (error) {
     console.error(error);
     reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({

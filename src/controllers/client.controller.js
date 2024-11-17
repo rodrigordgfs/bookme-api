@@ -133,12 +133,12 @@ const getClients = async (request, reply) => {
 
     reply
       .status(StatusCodes.OK)
-      .headers({
-        "X-Total-Pages": totalPages,
-        "X-Current-Page": currentPage,
-        "X-Total-Items": totalItems,
-      })
-      .send(clients);
+      .send({
+        totalPages,
+        currentPage,
+        totalItems,
+        data: clients
+      });
   } catch (error) {
     handleErrorResponse(error, reply);
   }

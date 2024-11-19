@@ -17,8 +17,14 @@ const logError = (error) => {
 
 const postService = async (name, description, duration, price) => {
   try {
+    console.log({ name, description, duration, price });
     return await prisma.service.create({
-      data: { name, description, duration, price },
+      data: {
+        description,
+        duration,
+        name,
+        price,
+      },
       select: SERVICE_SELECT_FIELDS,
     });
   } catch (error) {
@@ -75,7 +81,7 @@ const getServices = async (name, price, duration, page = 1, perPage = 10) => {
       select: SERVICE_SELECT_FIELDS,
       where: conditions.length > 0 ? { OR: conditions } : undefined,
       skip,
-      take: perPage
+      take: perPage,
     });
 
     return {

@@ -22,8 +22,8 @@ const formatZodErrors = (errors) => {
 
 const postService = async (request, reply) => {
   try {
-    const data = serviceSchema.parse(request.body);
-    const service = await serviceService.postService(data);
+    const { description, duration, name, price } = serviceSchema.parse(request.body);
+    const service = await serviceService.postService(name, description, duration, price);
 
     reply.status(StatusCodes.CREATED).send(service);
   } catch (error) {
@@ -42,9 +42,9 @@ const postService = async (request, reply) => {
 const patchService = async (request, reply) => {
   try {
     const { id } = idSchema.parse(request.params);
-    const data = serviceSchema.parse(request.body);
+    const { description, duration, name, price } = serviceSchema.parse(request.body);
 
-    const service = await serviceService.patchService(id, data);
+    const service = await serviceService.patchService(id, name, description, duration, price);
 
     if (!service) {
       return reply.code(StatusCodes.NOT_FOUND).send({

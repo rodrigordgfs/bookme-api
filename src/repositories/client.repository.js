@@ -24,6 +24,7 @@ const handleError = (error, message) => {
 
 const postClient = async (id_user, phone, birthDate, gender, photo) => {
   try {
+    console.log(id_user, phone, birthDate, gender, photo);
     return await prisma.client.create({
       data: {
         user: { connect: { id: id_user } },

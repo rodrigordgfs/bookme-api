@@ -10,11 +10,14 @@ const specialtySchema = z
 
 const photoSchema = z
   .string()
-  .regex(
-    /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/,
-    "Formato de imagem inválido"
-  )
-  .optional();
+  .optional()
+  .refine(
+    (value) =>
+      !value || /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(value),
+    {
+      message: "Formato de imagem inválido",
+    }
+  );
 
 const urlOrBase64Schema = z
   .string()
@@ -47,6 +50,10 @@ const handleError = (error, reply) => {
     return reply
       .code(StatusCodes.NOT_FOUND)
       .send({ error: "Usuário não encontrado" });
+  } else if (error.message === "Professional service already exists") {
+    return reply
+      .code(StatusCodes.CONFLICT)
+      .send({ error: "Serviço já cadastrado para este profissional" });
   } else if (error.message === "Professional not found") {
     return reply
       .code(StatusCodes.NOT_FOUND)
@@ -151,14 +158,12 @@ const getProfessionals = async (request, reply) => {
         perPage
       );
 
-    reply
-      .status(StatusCodes.OK)
-      .send({
-        totalPages,
-        currentPage,
-        totalItems,
-        data: profissionals,
-      });
+    reply.status(StatusCodes.OK).send({
+      totalPages,
+      currentPage,
+      totalItems,
+      data: profissionals,
+    });
   } catch (error) {
     handleError(error, reply);
   }
